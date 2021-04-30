@@ -21,13 +21,14 @@ Currently available containers have pre-installed QMCPACK dependencies, see the 
 Running Docker Containers
 -------------------------
 
-1. **Install the Docker engine**: install the latest version of the `Docker <https://www.docker.com/get-started>`_ engine for your system. Please see the documentation for different Linux distros `here <https://docs.docker.com/engine/install/#server>`_. 
+1. **Install the Docker engine**: install the latest version of the `Docker <https://www.docker.com/get-started>`_ engine for your system. Please see the documentation for different Linux distros `here <https://docs.docker.com/engine/install/#server>`_. Check your platform specific latest documentation as the `docker` engine service might not be automatically started (e.g. Windows Subsystem for Linux, WSL) and additional steps might be required. Example: your system might be restarted, or your username must be added to the `docker` group. 
 
-   After installation run the following command to verify the Docker engine is properly installed. **Note**: restart your system if necessary. 
+   After installation run the following command to verify the Docker engine is properly installed.
 
    .. code-block:: bash
    
       docker run hello-world
+
 
 2. **Pull an image** (optional, see 3): once Docker is properly installed and running on your system, use the following command to download a QMCPACK image and tag:
 
@@ -49,12 +50,12 @@ Running Docker Containers
 
    .. code-block:: bash
     
-      docker run -u root -v <QMCPack Source Directory>:/home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
+      docker run -u user -v <QMCPack Source Directory>:/home/user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
 
 
    Flags used by `docker run` (Note: The flags -i and -t are combined above):
     
-    `-u` : For building we need to run as the root user so that docker has write permissions for the build (e.g. install additional packages).
+    `-u` : Optional user, default is `user`, `root` is not recommended.
 
     `-v` : Replace `<QMCPack Source Directory>` with the direct path to your QMCPack directory, this maps it to our landing directory and gives docker access to the files
 
@@ -66,13 +67,18 @@ Running Docker Containers
 
    .. code-block:: bash
 
-      docker run -u root -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
+      docker run -u user -it williamfgc/qmcpack-ci:ubuntu20-openmpi /bin/bash
 
 
-Build QMCPACK on Docker
------------------------
+.. caution::
 
-The following steps just follow a regular QMCPACK build on any Linux environment
+   OpenMPI strongly advises against running as a `root` user, see `docs <https://www.open-mpi.org/doc/v3.1/man1/mpirun.1.php#sect22>`_ 
+
+
+Build and Test QMCPACK on Docker
+--------------------------------
+
+The following steps just follow a regular QMCPACK build on any Linux environment.
 
 1. **Download**: use `https` as `ssh` requires extra authentication  
 
@@ -110,8 +116,3 @@ The following steps just follow a regular QMCPACK build on any Linux environment
 
       ctest -VV -R deterministic-unit_test_wavefunction_trialwf
       ctest -L deterministic
-
-
-.. caution::
-
-   OpenMPI strongly advises against running as a `root` user, see `docs <https://www.open-mpi.org/doc/v3.1/man1/mpirun.1.php#sect22>`_ 
