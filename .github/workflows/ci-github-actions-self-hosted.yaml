@@ -103,7 +103,8 @@ jobs:
     if: |
       github.repository_owner == 'QMCPACK' &&
       github.event.issue.pull_request &&
-      startsWith(github.event.comment.body, 'Test this please')
+      ( startsWith(github.event.comment.body, 'Test this please') || 
+        startsWith(github.event.comment.body, 'Start testing in-house') )
 
     runs-on: [self-hosted, Linux, X64, ornl-sulfur-2]
 
