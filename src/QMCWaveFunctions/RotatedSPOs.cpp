@@ -371,8 +371,8 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
     myG_J = 0.0;
     myL_J.resize(NP);
     myL_J            = 0.0;
-    const size_t nmo = Phi->getOrbitalSetSize();
-    const size_t nel = P.last(0) - P.first(0);
+    const int nmo = Phi->getOrbitalSetSize();
+    const int nel = P.last(0) - P.first(0);
 
     const RealType* restrict C_p = Coeff.data();
     for (int i = 0; i < Coeff.size(); i++)
@@ -440,8 +440,8 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
   }
   if (recalculate)
   {
-    const size_t nmo = Phi->getOrbitalSetSize();
-    const size_t nel = P.last(0) - P.first(0);
+    const int nmo = Phi->getOrbitalSetSize();
+    const int nel = P.last(0) - P.first(0);
 
     table_method_evalWF(dlogpsi, nel, nmo, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn, M_up,
                         M_dn, Minv_up, Minv_dn, detData_up, lookup_tbl);
@@ -452,8 +452,8 @@ void RotatedSPOs::table_method_eval(std::vector<ValueType>& dlogpsi,
                                     std::vector<ValueType>& dhpsioverpsi,
                                     const ParticleSet::ParticleLaplacian& myL_J,
                                     const ParticleSet::ParticleGradient& myG_J,
-                                    const size_t nel,
-                                    const size_t nmo,
+                                    const int nel,
+                                    const int nmo,
                                     const ValueType& psiCurrent,
                                     const std::vector<RealType>& Coeff,
                                     const std::vector<size_t>& C2node_up,
@@ -879,8 +879,8 @@ $
 }
 
 void RotatedSPOs::table_method_evalWF(std::vector<ValueType>& dlogpsi,
-                                      const size_t nel,
-                                      const size_t nmo,
+                                      const int nel,
+                                      const int nmo,
                                       const ValueType& psiCurrent,
                                       const std::vector<RealType>& Coeff,
                                       const std::vector<size_t>& C2node_up,
