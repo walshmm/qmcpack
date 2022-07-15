@@ -93,7 +93,7 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
          << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
 
     // If the user input parameters, use those. Otherwise, initialize the parameters to zero
-    if (params_supplied)
+    if (params_supplied)  // NOLINT
     {
       myVars.insert(sstr.str(), params[i]);
     }
@@ -846,26 +846,28 @@ $
   {
     int kk = myVars.where(k);
     const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
-    if (i <= nel - 1 && j > nel - 1)
-    {
-      dhpsioverpsi[kk] +=
-          ValueType(-0.5 * Y4(i, j) -
-                    0.5 *
-                        (-K5T(i, j) + K5T(j, i) + TK5T(i, j) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) - K2XA(i, j) +
-                         K2XA(j, i) + TK2XA(i, j) - MK2T(i, j) + K1T(i, j) - K1T(j, i) - TK1T(i, j) -
-                         const2 / const1 * K2T(i, j) + const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) +
-                         K3T(i, j) - K3T(j, i) - TK3T(i, j) - K2T(i, j) + K2T(j, i) + TK2T(i, j)));
-    }
-    else if (i <= nel - 1 && j <= nel - 1)
-    {
-      dhpsioverpsi[kk] += ValueType(
-          -0.5 * (Y4(i, j) - Y4(j, i)) -
-          0.5 *
-              (-K5T(i, j) + K5T(j, i) + TK5T(i, j) - TK5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) +
-               TK2AiB(j, i) - K2XA(i, j) + K2XA(j, i) + TK2XA(i, j) - TK2XA(j, i) - MK2T(i, j) + MK2T(j, i) +
-               K1T(i, j) - K1T(j, i) - TK1T(i, j) + TK1T(j, i) - const2 / const1 * K2T(i, j) +
-               const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) - const2 / const1 * TK2T(j, i) + K3T(i, j) -
-               K3T(j, i) - TK3T(i, j) + TK3T(j, i) - K2T(i, j) + K2T(j, i) + TK2T(i, j) - TK2T(j, i)));
+    if(i <= nel - 1){
+      if (j > nel - 1) // NOLINT (bugprone-branch-clone: they are not identical, false positive)
+      {
+        dhpsioverpsi[kk] +=
+            ValueType(-0.5 * Y4(i, j) -
+                      0.5 *
+                          (-K5T(i, j) + K5T(j, i) + TK5T(i, j) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) - K2XA(i, j) +
+                          K2XA(j, i) + TK2XA(i, j) - MK2T(i, j) + K1T(i, j) - K1T(j, i) - TK1T(i, j) -
+                          const2 / const1 * K2T(i, j) + const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) +
+                          K3T(i, j) - K3T(j, i) - TK3T(i, j) - K2T(i, j) + K2T(j, i) + TK2T(i, j)));
+      }
+      else
+      {
+        dhpsioverpsi[kk] += ValueType(
+            -0.5 * (Y4(i, j) - Y4(j, i)) -
+            0.5 *
+                (-K5T(i, j) + K5T(j, i) + TK5T(i, j) - TK5T(j, i) + K2AiB(i, j) - K2AiB(j, i) - TK2AiB(i, j) +
+                TK2AiB(j, i) - K2XA(i, j) + K2XA(j, i) + TK2XA(i, j) - TK2XA(j, i) - MK2T(i, j) + MK2T(j, i) +
+                K1T(i, j) - K1T(j, i) - TK1T(i, j) + TK1T(j, i) - const2 / const1 * K2T(i, j) +
+                const2 / const1 * K2T(j, i) + const2 / const1 * TK2T(i, j) - const2 / const1 * TK2T(j, i) + K3T(i, j) -
+                K3T(j, i) - TK3T(i, j) + TK3T(j, i) - K2T(i, j) + K2T(j, i) + TK2T(i, j) - TK2T(j, i)));
+      }
     }
     else
     {
@@ -983,7 +985,7 @@ void RotatedSPOs::table_method_evalWF(std::vector<ValueType>& dlogpsi,
       std::fill(Y6.begin(), Y6.end(), 0.0);
       for (int i = 0; i < k; i++)
       {
-        BLAS::copy(k, Y5.data() + (data_it[datum + 1 + i]) * k, 1, (Y6.data() + i * k), 1);
+        BLAS::copy(k, Y5.data() + (data_it[datum + 1 + i]) * k(ptrdiff_t), 1, (Y6.data() + i * k(ptrdiff_t)), 1);
       }
 
       Vector<ValueType> WS;
@@ -1027,15 +1029,17 @@ void RotatedSPOs::table_method_evalWF(std::vector<ValueType>& dlogpsi,
   {
     int kk = myVars.where(k);
     const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
-    if (i <= nel - 1 && j > nel - 1)
-    {
-      dlogpsi[kk] +=
-          ValueType(detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) + (K4T(i, j) - K4T(j, i) - TK4T(i, j)));
-    }
-    else if (i <= nel - 1 && j <= nel - 1)
-    {
-      dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
-                               (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i)));
+    if(i <= nel - 1) { 
+      if (j > nel - 1) // NOLINT (bugprone-branch-clone: they are not identical, false positive)
+      {
+        dlogpsi[kk] +=
+            ValueType(detValues_up[0] * (Table(i, j)) * const0 * (1 / psiCurrent) + (K4T(i, j) - K4T(j, i) - TK4T(i, j)));
+      }
+      else
+      {
+        dlogpsi[kk] += ValueType(detValues_up[0] * (Table(i, j) - Table(j, i)) * const0 * (1 / psiCurrent) +
+                                (K4T(i, j) - TK4T(i, j) - K4T(j, i) + TK4T(j, i)));
+      }
     }
     else
     {
