@@ -24,6 +24,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCDrivers/DMC/WalkerControl.h"
 #include "QMCDrivers/SFNBranch.h"
+#include "EstimatorInputDelegates.h"
 #include "MemoryUsage.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
 #include "TauParams.hpp"
@@ -40,10 +41,11 @@ using WP = WalkerProperties::Indexes;
  */
 DMCBatched::DMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
+		       const std::optional<EstimatorManagerInput>& global_emi,
                        DMCDriverInput&& input,
                        MCPopulation&& pop,
                        Communicate* comm)
-    : QMCDriverNew(project_data, std::move(qmcdriver_input), std::move(pop),
+  : QMCDriverNew(project_data, std::move(qmcdriver_input), global_emi, std::move(pop),
                    "DMCBatched::", comm,
                    "DMCBatched",
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
@@ -103,7 +105,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   const int num_walkers   = crowd.size();
-  auto& pset_leader = walker_elecs.getLeader();
+  auto& pset_leader       = walker_elecs.getLeader();
   const int num_particles = pset_leader.getTotalNum();
 
   MCCoords<CT> drifts(num_walkers), drifts_reverse(num_walkers);
@@ -428,18 +430,22 @@ bool DMCBatched::run()
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
-  }
 
-  print_mem("DMCBatched after initialLogEvaluation", app_summary());
-
-  {
     FullPrecRealType energy, variance;
     population_.measureGlobalEnergyVariance(*myComm, energy, variance);
     // false indicates we do not support kill at node crossings.
     branch_engine_->initParam(population_, energy, variance, dmcdriver_input_.get_reconfiguration(), false);
     walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
+
+    print_mem("DMCBatched after initialLogEvaluation", app_summary());
+    if (qmcdriver_input_.get_measure_imbalance())
+      measureImbalance("InitialLogEvaluation");
   }
 
+  // this barrier fences all previous load imbalance. Avoid block 0 timing pollution.
+  myComm->barrier();
+
+  ScopedTimer local_timer(timers_.production_timer);
   ParallelExecutor<> crowd_task;
 
   for (int block = 0; block < num_blocks; ++block)
@@ -475,6 +481,8 @@ bool DMCBatched::run()
       population_.redistributeWalkers(crowds_);
     }
     print_mem("DMCBatched after a block", app_debug_stream());
+    if (qmcdriver_input_.get_measure_imbalance())
+      measureImbalance("Block " + std::to_string(block));
     endBlock();
     dmc_loop.stop();
 

@@ -9,11 +9,14 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 add_subdirectory(CPU)
 
 if(ENABLE_CUDA)
   add_subdirectory(CUDA)
+endif()
+
+if(ENABLE_SYCL)
+  add_subdirectory(SYCL)
 endif()
 
 if(ENABLE_OFFLOAD)

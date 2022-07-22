@@ -38,6 +38,7 @@
 #include "Message/Communicate.h"
 #include "Message/UniformCommunicateError.h"
 #include "Concurrency/OpenMP.h"
+#include "Estimators/EstimatorInputDelegates.h"
 #include <queue>
 #include <cstring>
 #include "hdf/HDFVersion.h"
@@ -89,7 +90,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << node_comm.size()
-#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM)
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_HIP) || defined(ENABLE_SYCL)
       << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
@@ -124,19 +125,30 @@ QMCMain::QMCMain(Communicate* c)
 
   // Record features configured in cmake or selected via command-line arguments to the printout
   app_summary() << std::endl;
-#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_ROCM)
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_HIP) && \
+    !defined(ENABLE_SYCL)
   app_summary() << "  CPU only build" << std::endl;
-#else
+#else // GPU case
 #if defined(ENABLE_OFFLOAD)
   app_summary() << "  OpenMP target offload to accelerators build option is enabled" << std::endl;
 #endif
-#if defined(ENABLE_CUDA) || defined(QMC_CUDA)
+#if defined(ENABLE_HIP)
+  app_summary() << "  HIP acceleration with direct HIP source code build option is enabled" << std::endl;
+#endif
+
+#if defined(QMC_CUDA2HIP) && defined(ENABLE_CUDA)
+  app_summary() << "  HIP acceleration with CUDA source code build option is enabled" << std::endl;
+#elif defined(QMC_CUDA2HIP) && defined(QMC_CUDA)
+  app_summary() << "  HIP acceleration with legacy CUDA source code build option is enabled" << std::endl;
+#elif defined(ENABLE_CUDA)
   app_summary() << "  CUDA acceleration build option is enabled" << std::endl;
+#elif defined(QMC_CUDA)
+  app_summary() << "  Legacy CUDA acceleration build option is enabled" << std::endl;
+#elif defined(ENABLE_SYCL)
+  app_summary() << "  SYCL acceleration build option is enabled" << std::endl;
 #endif
-#if defined(ENABLE_ROCM)
-  app_summary() << "  ROCM acceleration build option is enabled" << std::endl;
-#endif
-#endif
+#endif // GPU case end
+
 #ifdef ENABLE_TIMERS
   app_summary() << "  Timer build option is enabled. Current timer level is "
                 << timer_manager.get_timer_threshold_string() << std::endl;
@@ -478,7 +490,7 @@ bool QMCMain::validateXML()
     }
     else if (cname == "qmcsystem")
     {
-      processPWH(cur);
+      inputnode = processPWH(cur);
     }
     else if (cname == "init")
     {
@@ -558,6 +570,21 @@ bool QMCMain::processPWH(xmlNodePtr cur)
       inputnode = true;
       hamPool->put(cur);
     }
+    else if (cname == "estimators")
+    {
+      inputnode = true;
+      try
+      {
+        if (estimator_manager_input_)
+          throw UniformCommunicateError(
+              "QMCMain::validateXML. Illegal Input, only one global <estimators> node is permitted");
+        estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, cur);
+      }
+      catch (const UniformCommunicateError& ue)
+      {
+        myComm->barrier_and_abort(ue.what());
+      }
+    }
     else
     //add to m_qmcaction
     {
@@ -588,7 +615,8 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     try
     {
       QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
-      qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
+      qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmcSystem, *ptclPool, *psiPool,
+                                                  *hamPool, myComm);
       append_run = das.append_run;
     }
     catch (const UniformCommunicateError& ue)

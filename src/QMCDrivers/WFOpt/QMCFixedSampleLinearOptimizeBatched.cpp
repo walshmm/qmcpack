@@ -25,10 +25,10 @@
 #include "QMCDrivers/WFOpt/GradientTest.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
-#include "QMCHamiltonians/HamiltonianPool.h"
 #include "Concurrency/Info.hpp"
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
+#include "EstimatorInputDelegates.h"
 #include "Message/UniformCommunicateError.h"
 #include <cassert>
 #ifdef HAVE_LMY_ENGINE
@@ -46,19 +46,24 @@ namespace qmcplusplus
 using MatrixOperators::product;
 
 
-QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
-                                                                         MCWalkerConfiguration& w,
-                                                                         QMCDriverInput&& qmcdriver_input,
-                                                                         VMCDriverInput&& vmcdriver_input,
-                                                                         MCPopulation&& population,
-                                                                         SampleStack& samples,
-                                                                         Communicate* comm)
-    : QMCDriverNew(project_data,
-                   std::move(qmcdriver_input),
-                   std::move(population),
-                   "QMCLinearOptimizeBatched::",
-                   comm,
-                   "QMCLinearOptimizeBatched"),
+QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
+    const ProjectData& project_data,
+    MCWalkerConfiguration& w,
+    QMCDriverInput&& qmcdriver_input,
+    const std::optional<EstimatorManagerInput>& global_emi,
+    VMCDriverInput&& vmcdriver_input,
+    MCPopulation&& population,
+    SampleStack& samples,
+    Communicate* comm)
+    : QMCDriverNew(
+          project_data,
+          std::move(qmcdriver_input),
+          std::
+              nullopt, // this class is not a real QMCDriverNew as far as I can tell so we don't give it the actual global_emi_
+          std::move(population),
+          "QMCLinearOptimizeBatched::",
+          comm,
+          "QMCLinearOptimizeBatched"),
       objFuncWrapper_(*this),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
@@ -106,11 +111,10 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       line_min_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
       cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
       wfNode(NULL),
-      optNode(NULL),
       vmcdriver_input_(vmcdriver_input),
       samples_(samples),
-      W(w)
-
+      W(w),
+      global_emi_(global_emi)
 {
   //set the optimization flag
   qmc_driver_mode_.set(QMC_OPTIMIZE, 1);
@@ -217,7 +221,8 @@ void QMCFixedSampleLinearOptimizeBatched::start()
   initialize_timer_.start();
   optTarget->getConfigurations("");
   optTarget->setRng(vmcEngine->getRngRefs());
-  optTarget->checkConfigurations();
+  NullEngineHandle handle;
+  optTarget->checkConfigurations(handle);
   initialize_timer_.stop();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
@@ -233,6 +238,15 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
                                                        std::string MinMethod)
 {
   app_log() << "entering engine_start function" << std::endl;
+
+  std::unique_ptr<EngineHandle> handle;
+  if (MinMethod == "descent")
+    handle = std::make_unique<DescentEngineHandle>(descentEngineObj);
+  else if (MinMethod == "adaptive")
+    handle = std::make_unique<LMYEngineHandle>(*EngineObj);
+  else
+    handle = std::make_unique<NullEngineHandle>();
+
 
   // generate samples
   generate_samples_timer_.start();
@@ -253,8 +267,8 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
   initialize_timer_.start();
   optTarget->getConfigurations("");
   optTarget->setRng(vmcEngine->getRngRefs());
-  optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
-                                        MinMethod); // computes derivative ratios and pass into engine
+  optTarget->checkConfigurations(*handle);
+
   initialize_timer_.stop();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
@@ -429,7 +443,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
       eigenvalue_timer_.start();
       getLowestEigenvector(Right, currentParameterDirections);
-      objFuncWrapper_.Lambda = getNonLinearRescale(currentParameterDirections, S);
+      objFuncWrapper_.Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
       eigenvalue_timer_.stop();
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -632,23 +646,47 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
 
 
   doHybrid = false;
-
   if (MinMethod == "hybrid")
   {
     doHybrid = true;
     if (!hybridEngineObj)
       hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
 
+    hybridEngineObj->incrementStepCounter();
+
+    //Overwrite sampling information with input from selected optimizer block of a hybrid run
+    QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
+    VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
+
+    qmcdriver_input_copy.readXML(hybridEngineObj->getSelectedXML());
+    vmcdriver_input_copy.readXML(hybridEngineObj->getSelectedXML());
+
+
     processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
+
+
+    QMCDriverNew::AdjustedWalkerCounts awc =
+        adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_copy.get_total_walkers(),
+                                qmcdriver_input_copy.get_walkers_per_rank(), 1.0,
+                                qmcdriver_input_copy.get_num_crowds());
+    QMCDriverNew::startup(q, awc);
   }
   else
+  {
+    //Also need to overwrite input information again in case this method was preceded by hybrid method optimization
+    QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
+    qmcdriver_input_copy.readXML(q);
+
     processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
 
-  // This code is also called when setting up vmcEngine.  Would be nice to not duplicate the call.
-  QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
-                              qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
-  QMCDriverNew::startup(q, awc);
+    auto& qmcdriver_input = vmcEngine->getQMCDriverInput();
+    // This code is also called when setting up vmcEngine.  Would be nice to not duplicate the call.
+    QMCDriverNew::AdjustedWalkerCounts awc =
+        adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_copy.get_total_walkers(),
+                                qmcdriver_input_copy.get_walkers_per_rank(), 1.0,
+                                qmcdriver_input_copy.get_num_crowds());
+    QMCDriverNew::startup(q, awc);
+  }
 }
 
 bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
@@ -673,8 +711,9 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
     descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
 
   // sanity check
-  if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE)
-    APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive");
+  if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE &&
+      current_optimizer_type_ != OptimizerType::DESCENT)
+    APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive or descent");
 
 #ifdef _OPENMP
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
@@ -725,13 +764,28 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   // Destroy old object to stop timer to correctly order timer with object lifetime scope
   vmcEngine.reset(nullptr);
-  // create VMC engine
-  // if (vmcEngine == 0)
-  // {
+
+  // Explicitly copy the driver input objects since they will be used to instantiate the VMCEngine repeatedly.
+  //Overwriting input information is also done here to account for the hybrid method
   QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
   VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
+
+  if (MinMethod == "hybrid")
+  {
+    qmcdriver_input_copy.readXML(hybridEngineObj->getSelectedXML());
+    vmcdriver_input_copy.readXML(hybridEngineObj->getSelectedXML());
+  }
+  else
+  {
+    qmcdriver_input_copy.readXML(opt_xml);
+    vmcdriver_input_copy.readXML(opt_xml);
+  }
+
+
+  // create VMC engine
   vmcEngine =
-      std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
+      std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), global_emi_,
+                                   std::move(vmcdriver_input_copy),
                                    MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
                                                 population_.get_golden_electrons(), &population_.get_golden_twf(),
                                                 &population_.get_golden_hamiltonian()),
@@ -746,10 +800,10 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   vmcEngine->enable_sample_collection();
 
-
+  auto& qmcdriver_input = vmcEngine->getQMCDriverInput();
   QMCDriverNew::AdjustedWalkerCounts awc =
       adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
-                                qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
+                              qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
 
   bool success = true;
@@ -1036,7 +1090,7 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
     getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
-    objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
+    objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
@@ -1138,7 +1192,6 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
             << "*************************************************************************************************"
             << std::endl
             << std::endl;
-  //const Return_t starting_cost = this->optTarget->LMYEngineCost(true);
 
   // prepare wavefunction update which does nothing if we do not use block lm
   EngineObj->wfn_update_prep();
@@ -1232,11 +1285,16 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
             << "*************************************************************" << std::endl
             << std::endl;
 
-  std::string old_name = vmcEngine->getCommunicator()->getName();
-  vmcEngine->getCommunicator()->setName(old_name + ".middleShift");
-  start();
-  vmcEngine->getCommunicator()->setName(old_name);
+  //Apparently the batched drivers are intended to be run only once, which
+  //means that the origianl version of adaptive_three_shift will not work as
+  //calling start or engine_start at this point will lead to vmcEngine being run again.
+  //This will lead to a slight difference in behavior compared to the
+  //legacy drivers as those could be run a second time to obtain samples based
+  //on the wave function from the middle shift.
+  //It is possible this difference may not make much difference in
+  //practical optimization performance, but that is unexplored.
 
+  
   // say what we are doing
   app_log() << std::endl
             << "******************************************************************" << std::endl
@@ -1457,7 +1515,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
 
   // compute the scaling constant to apply to the update
-  objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat);
+  objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
   if (do_output_matrices_hdf_)
   {
@@ -1546,7 +1604,6 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 //Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimizeBatched::descent_run()
 {
-  start();
 
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
   engine_start(EngineObj, *descentEngineObj, MinMethod);
@@ -1601,6 +1658,7 @@ bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
     //of vectors to the BLM engine.
     if (previous_optimizer_type_ == OptimizerType::DESCENT)
     {
+      descentEngineObj->resetStorageCount();
       std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
 #if !defined(QMC_COMPLEX)
       //FIXME once complex is fixed in BLM engine
@@ -1617,155 +1675,5 @@ bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
   return (optTarget->getReportCounter() > 0);
 }
 #endif
-
-QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getLowestEigenvector(
-    Matrix<RealType>& A,
-    Matrix<RealType>& B,
-    std::vector<RealType>& ev)
-{
-  int Nl(ev.size());
-  //   Getting the optimal worksize
-  char jl('N');
-  char jr('V');
-  std::vector<RealType> alphar(Nl), alphai(Nl), beta(Nl);
-  Matrix<RealType> eigenT(Nl, Nl);
-  int info;
-  int lwork(-1);
-  std::vector<RealType> work(1);
-  RealType tt(0);
-  int t(1);
-  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t, eigenT.data(),
-               &Nl, &work[0], &lwork, &info);
-  lwork = int(work[0]);
-  work.resize(lwork);
-
-  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t, eigenT.data(),
-               &Nl, &work[0], &lwork, &info);
-  if (info != 0)
-  {
-    APP_ABORT("Invalid Matrix Diagonalization Function!");
-  }
-  std::vector<std::pair<RealType, int>> mappedEigenvalues(Nl);
-  for (int i = 0; i < Nl; i++)
-  {
-    RealType evi(alphar[i] / beta[i]);
-    if (std::abs(evi) < 1e10)
-    {
-      mappedEigenvalues[i].first  = evi;
-      mappedEigenvalues[i].second = i;
-    }
-    else
-    {
-      mappedEigenvalues[i].first  = std::numeric_limits<RealType>::max();
-      mappedEigenvalues[i].second = i;
-    }
-  }
-  std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());
-  for (int i = 0; i < Nl; i++)
-    ev[i] = eigenT(mappedEigenvalues[0].second, i) / eigenT(mappedEigenvalues[0].second, 0);
-  return mappedEigenvalues[0].first;
-}
-
-QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getLowestEigenvector(
-    Matrix<RealType>& A,
-    std::vector<RealType>& ev)
-{
-  int Nl(ev.size());
-  //   Getting the optimal worksize
-  RealType zerozero = A(0, 0);
-  char jl('N');
-  char jr('V');
-  std::vector<RealType> alphar(Nl), alphai(Nl), beta(Nl);
-  Matrix<RealType> eigenT(Nl, Nl);
-  Matrix<RealType> eigenD(Nl, Nl);
-  int info;
-  int lwork(-1);
-  std::vector<RealType> work(1);
-  LAPACK::geev(&jl, &jr, &Nl, A.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenT.data(), &Nl, &work[0],
-               &lwork, &info);
-  lwork = int(work[0]);
-  work.resize(lwork);
-
-  LAPACK::geev(&jl, &jr, &Nl, A.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenT.data(), &Nl, &work[0],
-               &lwork, &info);
-  if (info != 0)
-  {
-    APP_ABORT("Invalid Matrix Diagonalization Function!");
-  }
-  std::vector<std::pair<RealType, int>> mappedEigenvalues(Nl);
-  for (int i = 0; i < Nl; i++)
-  {
-    RealType evi(alphar[i]);
-    if ((evi < zerozero) && (evi > (zerozero - 1e2)))
-    {
-      mappedEigenvalues[i].first  = (evi - zerozero + 2.0) * (evi - zerozero + 2.0);
-      mappedEigenvalues[i].second = i;
-    }
-    else
-    {
-      mappedEigenvalues[i].first  = std::numeric_limits<RealType>::max();
-      mappedEigenvalues[i].second = i;
-    }
-  }
-  std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());
-  //         for (int i=0; i<4; i++) app_log()<<i<<": "<<alphar[mappedEigenvalues[i].second]<< std::endl;
-  for (int i = 0; i < Nl; i++)
-    ev[i] = eigenT(mappedEigenvalues[0].second, i) / eigenT(mappedEigenvalues[0].second, 0);
-  return alphar[mappedEigenvalues[0].second];
-  //     }
-}
-
-void QMCFixedSampleLinearOptimizeBatched::getNonLinearRange(int& first, int& last)
-{
-  std::vector<int> types;
-  optTarget->getParameterTypes(types);
-  first = 0;
-  last  = types.size();
-  //assume all non-linear coeffs are together.
-  if (types[0] == optimize::LINEAR_P)
-  {
-    int i(0);
-    while (i < types.size())
-    {
-      if (types[i] == optimize::LINEAR_P)
-        first = i;
-      i++;
-    }
-    first++;
-  }
-  else
-  {
-    int i(types.size() - 1);
-    while (i >= 0)
-    {
-      if (types[i] == optimize::LINEAR_P)
-        last = i;
-      i--;
-    }
-  }
-  //     returns the number of non-linear parameters.
-  //    app_log()<<"line params: "<<first<<" "<<last<< std::endl;
-}
-
-QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getNonLinearRescale(
-    std::vector<RealType>& dP,
-    Matrix<RealType>& S)
-{
-  int first(0), last(0);
-  getNonLinearRange(first, last);
-  if (first == last)
-    return 1.0;
-  RealType rescale(1.0);
-  RealType xi(0.5);
-  RealType D(0.0);
-  for (int i = first; i < last; i++)
-    for (int j = first; j < last; j++)
-      D += S(i + 1, j + 1) * dP[i + 1] * dP[j + 1];
-  rescale = (1 - xi) * D / ((1 - xi) + xi * std::sqrt(1 + D));
-  rescale = 1.0 / (1.0 - rescale);
-  //     app_log()<<"rescale: "<<rescale<< std::endl;
-  return rescale;
-}
-
 
 } // namespace qmcplusplus

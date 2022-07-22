@@ -76,6 +76,12 @@ function(COPY_DIRECTORY_USING_SYMLINK_LIMITED SRC_DIR DST_DIR ${ARGN})
   symlink_list_of_files("${FILE_FOLDER_NAMES}" "${DST_DIR}")
   list(TRANSFORM ARGN PREPEND "${SRC_DIR}/")
   symlink_list_of_files("${ARGN}" "${DST_DIR}")
+# Special handling for .txt input files; assumed to be an ensemble run. Link referenced ensemble inputs
+  if ( ${ARGN} MATCHES ".txt")
+    file(STRINGS ${ARGN} ENSEMBLE_INPUTS)
+    list(TRANSFORM ENSEMBLE_INPUTS PREPEND "${SRC_DIR}/")   
+    symlink_list_of_files("${ENSEMBLE_INPUTS}" "${DST_DIR}")
+  endif()
 endfunction()
 
 # Control copy vs. symlink with top-level variable
@@ -122,7 +128,8 @@ function(
 
   if(NOT QMC_OMP)
     if(${THREADS} GREATER 1)
-      message(VERBOSE "Disabling test ${TESTNAME} (exceeds maximum number of threads=1 if OpenMP is disabled -DQMC_OMP=0)")
+      message(VERBOSE
+              "Disabling test ${TESTNAME} (exceeds maximum number of threads=1 if OpenMP is disabled -DQMC_OMP=0)")
       return()
     endif()
   endif()
@@ -184,6 +191,10 @@ function(
   set(TEST_LABELS_TEMP "")
   if(TEST_ADDED_TEMP)
     add_test_labels(${TESTNAME} TEST_LABELS_TEMP)
+    set_property(
+      TEST ${TESTNAME}
+      APPEND
+      PROPERTY LABELS "QMCPACK")
   endif()
   set(${TEST_ADDED}
       ${TEST_ADDED_TEMP}
@@ -303,7 +314,8 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       "latdev"
       "EnergyEstim__nume_real"
       "kecorr"
-      "mpc")
+      "mpc"
+      "soecp")
     list(
       APPEND
       CHECK_SCALAR_FLAG
@@ -336,7 +348,8 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       "--latdev"
       "--el"
       "--kec"
-      "--mpc")
+      "--mpc"
+      "--sopp")
 
     set(TEST_ADDED FALSE)
     set(TEST_LABELS "")
@@ -350,12 +363,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       TEST_ADDED
       TEST_LABELS
       ${INPUT_FILE})
-    if(TEST_ADDED)
-      set_property(
-        TEST ${FULL_NAME}
-        APPEND
-        PROPERTY LABELS "QMCPACK")
-    endif()
 
     if(TEST_ADDED AND NOT SHOULD_SUCCEED)
       set_property(TEST ${FULL_NAME} APPEND PROPERTY WILL_FAIL TRUE)

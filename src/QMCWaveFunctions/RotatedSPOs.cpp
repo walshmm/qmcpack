@@ -21,14 +21,22 @@ namespace qmcplusplus
 RotatedSPOs::RotatedSPOs(std::unique_ptr<SPOSet>&& spos)
     : SPOSet(spos->isOMPoffload(), spos->hasIonDerivs(), true),
       Phi(std::move(spos)),
-      params_supplied(false),
-      nel_major_(0)
+      nel_major_(0),
+      params_supplied(false)
 {
   className      = "RotatedSPOs";
   OrbitalSetSize = Phi->getOrbitalSetSize();
 }
 
 RotatedSPOs::~RotatedSPOs() {}
+
+
+void RotatedSPOs::setRotationParameters(const std::vector<RealType>& param_list)
+{
+  params          = param_list;
+  params_supplied = true;
+}
+
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
@@ -138,8 +146,12 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
     rot_mat[p][q] = -x;
   }
 
+  /*
+    rot_mat is now an anti-hermitian matrix. Now we convert
+    it into a unitary matrix via rot_mat = exp(-rot_mat). 
+    Finally, apply unitary matrix to orbs.
+  */
   exponentiate_antisym_matrix(rot_mat);
-
   Phi->applyRotation(rot_mat, use_stored_copy);
 }
 

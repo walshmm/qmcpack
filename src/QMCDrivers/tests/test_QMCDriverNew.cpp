@@ -19,6 +19,7 @@
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include "EstimatorInputDelegates.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
@@ -29,8 +30,7 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
 {
   using namespace testing;
   Concurrency::OverrideMaxCapacity<> override(8);
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate* comm = OHMMS::Controller;
   outputManager.pause();
 
   Libxml2Document doc;
@@ -46,8 +46,8 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   SampleStack samples;
   WalkerConfigurations walker_confs;
   QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input),
-                                    MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
-                                                 wavefunction_pool.getPrimary(),
+                                    MCPopulation(comm->size(), comm->rank(), walker_confs,
+                                                 particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
                                                  hamiltonian_pool.getPrimary()),
                                     samples, comm);
 
@@ -74,8 +74,7 @@ TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
   using namespace testing;
 
   Concurrency::OverrideMaxCapacity<> override(8);
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate* comm = OHMMS::Controller;
   outputManager.pause();
 
   Libxml2Document doc;
@@ -100,8 +99,8 @@ TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
   SampleStack samples;
   WalkerConfigurations walker_confs;
   QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy),
-                                      MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
-                                                   wavefunction_pool.getPrimary(),
+                                      MCPopulation(comm->size(), comm->rank(), walker_confs,
+                                                   particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
                                                    hamiltonian_pool.getPrimary()),
                                       samples, comm);
   QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<>> testNumCrowds;
@@ -113,8 +112,7 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
 {
   using namespace testing;
   Concurrency::OverrideMaxCapacity<> override(8);
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate* comm = OHMMS::Controller;
   outputManager.pause();
 
   Libxml2Document doc;
@@ -140,8 +138,8 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
   SampleStack samples;
   WalkerConfigurations walker_confs;
   QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy),
-                                      MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
-                                                   wavefunction_pool.getPrimary(),
+                                      MCPopulation(comm->size(), comm->rank(), walker_confs,
+                                                   particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
                                                    hamiltonian_pool.getPrimary()),
                                       samples, comm);
 
@@ -153,8 +151,7 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
 {
   using namespace testing;
   Concurrency::OverrideMaxCapacity<> override(8);
-  Communicate* comm;
-  comm = OHMMS::Controller;
+  Communicate* comm = OHMMS::Controller;
   outputManager.pause();
 
   Libxml2Document doc;
@@ -170,8 +167,8 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
   SampleStack samples;
   WalkerConfigurations walker_confs;
   QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input),
-                                    MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
-                                                 wavefunction_pool.getPrimary(),
+                                    MCPopulation(comm->size(), comm->rank(), walker_confs,
+                                                 particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
                                                  hamiltonian_pool.getPrimary()),
                                     samples, comm);
 
@@ -252,6 +249,12 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
     CHECK(Approx(loggb[0]) == -0.766360905151);
     CHECK(Approx(loggb[1]) == -4.165017895878);
     CHECK(Approx(loggb[2]) == -10.457774371057);
+  }
+
+  {
+    outputManager.resume();
+    qmcdriver.testMeasureImbalance();
+    outputManager.pause();
   }
 }
 

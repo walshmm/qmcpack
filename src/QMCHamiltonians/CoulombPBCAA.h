@@ -20,6 +20,7 @@
 #include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "Particle/DistanceTable.h"
+#include <ResourceHandle.h>
 
 namespace qmcplusplus
 {
@@ -74,6 +75,8 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Vector<ComplexType> del_eikr;
   /// Flag for whether to compute forces or not
   bool ComputeForces;
+  /// Flag for whether to use quasi-2D Ewald
+  const bool quasi2d;
   //     madelung constant
   RealType MC0;
 
@@ -151,6 +154,18 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
       setParticleSetF(plist, offset);
   }
 
+  /** initialize a shared resource and hand it to a collection
+   */
+  void createResource(ResourceCollection& collection) const override;
+
+  /** acquire a shared resource from a collection
+   */
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
+
+  /** return a shared resource to a collection
+   */
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
+
 private:
   /// if true use offload
   const bool use_offload_;
@@ -162,6 +177,18 @@ private:
   NewTimer& evalSR_timer_;
   /// Timer for offload part
   NewTimer& offload_timer_;
+
+struct CoulombPBCAAMultiWalkerResource : public Resource
+{
+  CoulombPBCAAMultiWalkerResource() : Resource("CoulombPBCAA") {}
+
+  Resource* makeClone() const override { return new CoulombPBCAAMultiWalkerResource(*this); }
+
+  Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> values_offload;
+};
+
+  /// multiwalker shared resource
+  ResourceHandle<CoulombPBCAAMultiWalkerResource> mw_res_;
 };
 
 } // namespace qmcplusplus

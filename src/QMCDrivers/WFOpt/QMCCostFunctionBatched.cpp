@@ -75,7 +75,7 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
       OptVariables[j] = PM[j];
     resetPsi();
     //evaluate new local energies and derivatives
-    NumWalkersEff = correlatedSampling(true);
+    EffectiveWeight effective_weight = correlatedSampling(true);
     //Estimators::accumulate has been called by correlatedSampling
     curAvg_w = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
     //    Return_t curAvg2_w = curAvg_w*curAvg_w;
@@ -164,13 +164,8 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
       if (std::abs(w_abs) > 1.0e-10)
         PGradient[j] += w_abs * EDtotals[j];
     }
-    IsValid = true;
-    if (NumWalkersEff < MinNumWalkers * NumSamples)
-    {
-      WARNMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
-                                                                         << MinNumWalkers * NumSamples)
-      IsValid = false;
-    }
+
+    IsValid = isEffectiveWeightValid(effective_weight);
   }
 }
 
@@ -231,8 +226,10 @@ void compute_batch_parameters(int sample_size, int batch_size, int& num_batches,
 }
 
 /** evaluate everything before optimization */
-void QMCCostFunctionBatched::checkConfigurations()
+void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 {
+  handle.prepareSampling(NumOptimizables);
+
   ScopedTimer tmp_timer(check_config_timer_);
 
   RealType et_tot = 0.0;
@@ -291,7 +288,8 @@ void QMCCostFunctionBatched::checkConfigurations()
                           std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
                           Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
                           Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
-                          bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH) {
+                          bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH,
+                          EngineHandle& handle) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
     const int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
@@ -373,6 +371,8 @@ void QMCCostFunctionBatched::checkConfigurations()
           }
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
+
+          handle.takeSample(energy_list, dlogpsi_array, dhpsioverpsi_array, ib);
         }
 
         for (int ib = 0; ib < current_batch_size; ib++)
@@ -419,7 +419,7 @@ void QMCCostFunctionBatched::checkConfigurations()
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval_, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
               d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads,
-              compute_nlpp, includeNonlocalH);
+              compute_nlpp, includeNonlocalH, handle);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
@@ -441,12 +441,15 @@ void QMCCostFunctionBatched::checkConfigurations()
   app_log() << "  VMC Eavg = " << Etarget << std::endl;
   app_log() << "  VMC Evar = " << etemp[2] / etemp[1] - Etarget * Etarget << std::endl;
   app_log() << "  Total weights = " << etemp[1] << std::endl;
+
+  handle.finishSampling();
+
   app_log().flush();
   setTargetEnergy(Etarget);
   ReportCounter = 0;
+  IsValid       = true;
 
   //collect SumValue for computedCost
-  NumWalkersEff           = etemp[1];
   SumValue[SUM_WGT]       = etemp[1];
   SumValue[SUM_WGTSQ]     = etemp[1];
   SumValue[SUM_E_WGT]     = etemp[0];
@@ -491,7 +494,7 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
   }
 }
 
-QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(bool needGrad)
+QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampling(bool needGrad)
 {
   ScopedTimer tmp_timer(corr_sampling_timer_);
 
@@ -555,7 +558,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
       ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(opt_data.getSharedResource().pset_res, p_list);
       ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(opt_data.getSharedResource().twf_res, wf_list);
-      ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(opt_data.getSharedResource().ham_res, h0_list);
+      ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(opt_data.get_h0_res(), h0_list);
 
       // Load this batch of samples into the crowd data
       for (int ib = 0; ib < current_batch_size; ib++)
@@ -717,13 +720,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   }
   //collect everything
   myComm->allreduce(SumValue);
-  //     for (int i=0; i<SumValue.size(); i++) std::cerr <<SumValue[i]<<"  ";
-  //     std::cerr << std::endl;
-  //     app_log()<<"After purge Energy Variance Weight "
-  //      << SumValue[SUM_E_WGT]/SumValue[SUM_WGT] << " "
-  //      << SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT] -(SumValue[SUM_E_WGT]/SumValue[SUM_WGT])*(SumValue[SUM_E_WGT]/SumValue[SUM_WGT]) << " "
-  //      << SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ] << std::endl;
-  return SumValue[SUM_WGT] * SumValue[SUM_WGT] / SumValue[SUM_WGTSQ];
+  return SumValue[SUM_WGT] * SumValue[SUM_WGT] / (SumValue[SUM_WGTSQ] * samples_.getGlobalNumSamples());
 }
 
 
@@ -759,7 +756,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
   Left  = 0.0;
 
   //     resetPsi();
-  //     Return_t NWE = NumWalkersEff=correlatedSampling(true);
   curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
   //    RealType H2_avg = 1.0/curAvg2_w;

@@ -135,7 +135,6 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   bool grid_succeeded;
   element     = cur->children;
   int nvalues = (int)nEDValues;
-  int i       = 0;
   while (element != NULL)
   {
     std::string name = (const char*)element->name;
@@ -152,7 +151,6 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
       else
         grid_succeeded = sg->put(element, ref.points, periodic, false);
       stop = stop || !grid_succeeded;
-      ++i;
     }
     element = element->next;
   }
@@ -287,9 +285,9 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     p          = 0;
     {
       Vd_trace->combine();
-      const ParticleSet& Ps            = *Pdynamic;
-      const std::vector<TraceReal>& Ts = Td_trace->sample;
-      const std::vector<TraceReal>& Vs = Vd_trace->sample;
+      const ParticleSet& Ps = *Pdynamic;
+      const auto& Ts        = Td_trace->sample;
+      const auto& Vs        = Vd_trace->sample;
       for (int i = 0; i < Ps.getTotalNum(); i++)
       {
         EDValues(p, W) = w;
@@ -301,8 +299,8 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     if (Pstatic)
     {
       Vs_trace->combine();
-      const ParticleSet& Ps            = *Pstatic;
-      const std::vector<TraceReal>& Vs = Vs_trace->sample;
+      const ParticleSet& Ps = *Pstatic;
+      const auto& Vs        = Vs_trace->sample;
       if (!ion_points)
         for (int i = 0; i < Ps.getTotalNum(); i++)
         {

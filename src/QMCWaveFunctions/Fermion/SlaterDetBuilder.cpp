@@ -396,7 +396,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       app_summary() << "      Using walker batching." << std::endl;
 
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-      if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CUDA)
+      if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
         adet = std::make_unique<DiracDeterminantBatched<
@@ -409,7 +409,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #endif
       {
 #if defined(ENABLE_OFFLOAD)
-        if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CPU)
+        if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CPU)
           throw std::runtime_error("No pure CPU implementation of walker-batched Slater determinant.");
         app_summary() << "      Running OpenMP offload code path on GPU. "
 #else
@@ -425,7 +425,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       if (useGPU == "omptarget")
         throw std::runtime_error("No OpenMP offload implementation of single-walker Slater determinant.");
 #if defined(ENABLE_CUDA)
-      if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CUDA)
+      else if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
 #ifdef QMC_CUDA2HIP
         app_summary() << "      Running on an AMD GPU via HIP acceleration." << std::endl;
@@ -438,8 +438,18 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
                                                                                           delay_rank,
                                                                                           matrix_inverter_kind);
       }
-      else
+#elif defined(ENABLE_SYCL)
+      else if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::SYCL)
+      {
+        app_summary() << "      Running on a GPU via SYCL acceleration." << std::endl;
+        adet = std::make_unique<
+            DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
+                                                                                          firstIndex, lastIndex,
+                                                                                          delay_rank,
+                                                                                          matrix_inverter_kind);
+      }
 #endif
+      else
       {
         app_summary() << "      Running on CPU." << std::endl;
         adet = std::make_unique<DiracDeterminant<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
@@ -538,7 +548,8 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
                   << grp << ", problems with ci configuration list. \n");
       }
     }
-    dets[grp]->createDetData(refdet_id, list, C2nodes[grp], C2nodes_sorted[grp]);
+    // reorder unique determinants for a given spin based on the selected reference determinant
+    dets[grp]->createDetData(C2nodes[grp][refdet_id], list, C2nodes[grp], C2nodes_sorted[grp]);
   }
 
   if (csf_data_ptr && csf_data_ptr->coeffs.size() == 1)
@@ -661,7 +672,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   std::vector<size_t> NEs(nGroups);
   size_t nstates        = 0;
   size_t ndets          = 0;
-  size_t count          = 0;
   size_t cnt0           = 0;
   std::string Dettype   = "DETS";
   std::string CSFChoice = "qchem_coeff";
@@ -772,7 +782,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         sumsq_qc += qc_ci * qc_ci;
         DetsPerCSF.push_back(0);
         CItags.push_back(tag);
-        count++;
         xmlNodePtr csf = cur->children;
         while (csf != NULL)
         {
@@ -858,7 +867,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
       for (size_t i = 0; i < confgLists[grp].size(); i++)
       {
         bool found = false;
-        size_t k   = -1;
+        int k      = -1;
         for (size_t j = 0; j < uniqueConfgs[grp].size(); j++)
         {
           if (confgLists[grp][i] == uniqueConfgs[grp][j])

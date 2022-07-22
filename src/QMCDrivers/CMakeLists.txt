@@ -29,7 +29,7 @@ set(QMCDRIVERS
     QMCDriverInput.cpp
     QMCDriverNew.cpp
     WFOpt/QMCWFOptFactoryNew.cpp
-    WFOpt/QMCLinearOptimize.cpp
+    WFOpt/LinearMethod.cpp
     WFOpt/QMCFixedSampleLinearOptimize.cpp
     WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
     WFOpt/OutputMatrix.cpp
@@ -78,11 +78,10 @@ set(QMCDRIVERS
     CorrelatedSampling/CSUpdateBase.cpp)
 
 if(QMC_CUDA)
-  set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC_CUDA.cpp DMC/DMC_CUDA.cpp WFOpt/QMCCostFunctionCUDA.cpp)
+  set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC_CUDA.cpp DMC/DMC_CUDA.cpp)
 endif(QMC_CUDA)
 
-set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC.cpp VMC/VMCBatched.cpp WFOpt/QMCCostFunction.cpp
-               WFOpt/QMCCostFunctionBatched.cpp)
+set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC.cpp VMC/VMCBatched.cpp WFOpt/QMCCostFunction.cpp WFOpt/QMCCostFunctionBatched.cpp)
 
 if(HAVE_MPI)
   set(QMCDRIVERS ${QMCDRIVERS} DMC/WalkerControlMPI.cpp DMC/WalkerReconfigurationMPI.cpp)
@@ -91,6 +90,7 @@ endif(HAVE_MPI)
 # if using the LMYEngine interface, make sure we add the necessary functions
 if(BUILD_LMYENGINE_INTERFACE)
   set(QMCDRIVERS ${QMCDRIVERS} LMYEngineInterface/LMYE_QMCCostFunction.cpp)
+  set(QMCDRIVERS ${QMCDRIVERS} LMYEngineInterface/LMYE_QMCCostFunctionBatched.cpp)
 endif(BUILD_LMYENGINE_INTERFACE)
 
 ####################################

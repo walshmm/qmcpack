@@ -19,6 +19,7 @@
 #include "EwaldRef.h"
 #include "Particle/DistanceTable.h"
 #include "Utilities/ProgressReportEngine.h"
+#include <ResourceCollection.h>
 #include "Numerics/OneDimCubicSplineLinearGrid.h"
 
 namespace qmcplusplus
@@ -29,6 +30,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
       FirstTime(true),
       myConst(0.0),
       ComputeForces(computeForces),
+      quasi2d(LRCoulombSingleton::this_lr_type == LRCoulombSingleton::QUASI2D),
       Ps(ref),
       use_offload_(active && !computeForces && use_offload),
       d_aa_ID(ref.addTable(ref, use_offload_ ? DTModes::ALL_OFF : DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP)),
@@ -43,13 +45,16 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ref);
   PtclRefName = ref.getDistTable(d_aa_ID).getName();
-  initBreakup(ref);
-
-  if (ComputeForces)
+  if (ComputeForces || quasi2d)
   {
     ref.turnOnPerParticleSK();
+  }
+  initBreakup(ref);
+  if (ComputeForces)
+  {
     updateSource(ref);
   }
+
   if (!is_active)
   {
     ref.update();
@@ -435,11 +440,44 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
 {
   mRealType Consts = 0.0; // constant term
   mRealType v1;           //single particle energy
+  mRealType vl_r0 = AA->evaluateLR_r0();
+  mRealType vs_k0 = AA->evaluateSR_k0();
+  if (quasi2d) // background term has z dependence
+  { // just evaluate the Madelung term
+    for (int ispec=1; ispec<NumSpecies; ispec++)
+      if (Zspec[ispec] != Zspec[0])
+        throw std::runtime_error("quasi2d assumes same charge");
+    if (report)
+    {
+      app_log() << "    vlr(r->0) = " << vl_r0 << std::endl;
+      app_log() << "   1/V vsr_k0 = " << vs_k0 << std::endl;
+    }
+    // make sure we can ignore the short-range Madelung sum
+    mRealType Rws = Ps.getLattice().WignerSeitzRadius;
+    mRealType rvsr_at_image = Rws*AA->evaluate(Rws, 1.0/Rws);
+    if (rvsr_at_image > 1e-6)
+    {
+      std::ostringstream msg;
+      msg << std::setprecision(14);
+      msg << "Ewald alpha = " << rvsr_at_image << " is too small" << std::endl;
+      msg << "Short-range potential r*vsr(r) = " << rvsr_at_image << " at image radius r=" << Rws << std::endl;
+      throw std::runtime_error(msg.str());
+    }
+    // perform long-range Madelung sum
+    const StructFact& PtclRhoK(Ps.getSK());
+    v1 = AA->evaluate_slab(0,
+                           Ps.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[0],
+                           PtclRhoK.eikr_i[0], PtclRhoK.eikr_r[0], PtclRhoK.eikr_i[0]);
+    if (report)
+      app_log() << "   LR Madelung = " << v1 << std::endl;
+    MC0 = 0.5*(v1 - vl_r0);
+    Consts = NumCenters*MC0;
+  }
+  else // group background term together with Madelung vsr_k0 part
+  {
 #if !defined(REMOVE_TRACEMANAGER)
   V_const = 0.0;
 #endif
-  //v_l(r=0) including correction due to the non-periodic direction
-  mRealType vl_r0 = AA->evaluateLR_r0();
   for (int ipart = 0; ipart < NumCenters; ipart++)
   {
     v1 = -.5 * Zat[ipart] * Zat[ipart] * vl_r0;
@@ -450,8 +488,6 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
   }
   if (report)
     app_log() << "   PBCAA self-interaction term " << Consts << std::endl;
-  //Neutraling background term
-  mRealType vs_k0 = AA->evaluateSR_k0(); //v_s(k=0)
   //Compute Madelung constant
   MC0 = 0.0;
   for (int i = 0; i < AA->Fk.size(); i++)
@@ -468,6 +504,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
 #endif
     Consts += v1;
   }
+  } // end if quasi2d
   if (report)
     app_log() << "   PBCAA total constant " << Consts << std::endl;
   return Consts;
@@ -505,11 +542,8 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
                                                                     const RefVectorWithLeader<ParticleSet>& p_list)
 {
   const size_t nw = o_list.size();
-  std::vector<Return_t> values(nw);
-  Vector<Return_t, OffloadPinnedAllocator<Return_t>> values_offload(nw);
   auto& p_leader   = p_list.getLeader();
   auto& caa_leader = o_list.getCastedLeader<CoulombPBCAA>();
-
   ScopedTimer local_timer(caa_leader.evalSR_timer_);
 
   RefVectorWithLeader<DistanceTable> dt_list(p_leader.getDistTable(caa_leader.d_aa_ID));
@@ -523,6 +557,7 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
   if (chunk_size == 0)
     throw std::runtime_error("bug dtaa_leader.get_num_particls_stored() == 0");
 
+  auto& values_offload = caa_leader.mw_res_->values_offload;
   const size_t total_num      = p_leader.getTotalNum();
   const size_t total_num_half = (total_num + 1) / 2;
   const size_t num_padded     = getAlignedSize<RealType>(total_num);
@@ -538,9 +573,10 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
   const auto delta_inv   = caa_leader.rVs_offload->get_delta_inv();
   const auto Zat         = caa_leader.Zat_offload->data();
 
-  auto value_ptr = values_offload.data();
-
   {
+    values_offload.resize(nw);
+    std::fill_n(values_offload.data(), nw, 0);
+    auto value_ptr = values_offload.data();
     values_offload.updateTo();
     for (size_t ichunk = 0; ichunk < num_chunks; ichunk++)
     {
@@ -575,9 +611,10 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
     }
 
     values_offload.updateFrom();
-    for (int iw = 0; iw < nw; iw++)
-      values[iw] = values_offload[iw];
   }
+  std::vector<Return_t> values(nw);
+  for (int iw = 0; iw < nw; iw++)
+    values[iw] = values_offload[iw];
   return values;
 }
 
@@ -586,10 +623,27 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
   ScopedTimer local_timer(evalLR_timer_);
   mRealType res = 0.0;
   const StructFact& PtclRhoK(P.getSK());
-  if (PtclRhoK.SuperCellEnum == SUPERCELL_SLAB)
-    throw std::runtime_error(
-        "CoulombPBCAA::evalLR PtclRhoK.SuperCellEnum == SUPERCELL_SLAB case not implemented. There was an "
-        "implementation with complex-valued storage that may be resurrected using real-valued storage.");
+  if (quasi2d)
+  {
+    const auto& d_aa(P.getDistTableAA(d_aa_ID));
+    // need 1/2 \sum_{i,j} v_E(r_i - r_j)
+    //distance table handles jat<iat
+    for (int iat = 1; iat < NumCenters; ++iat)
+    {
+      mRealType u = 0;
+      const int slab_dir = OHMMS_DIM - 1;
+      const auto& dr = d_aa.getDisplRow(iat);
+      for (int jat = 0; jat < iat; ++jat)
+      {
+        const RealType z = std::abs(dr[jat][slab_dir]);
+        u += Zat[jat] *
+             AA->evaluate_slab(z,
+                               P.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[iat],
+                               PtclRhoK.eikr_i[iat], PtclRhoK.eikr_r[jat], PtclRhoK.eikr_i[jat]);
+      }
+      res += Zat[iat]*u;
+    }
+  }
   else
   {
     for (int spec1 = 0; spec1 < NumSpecies; spec1++)
@@ -606,6 +660,29 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
     }   //spec1
   }
   return res;
+}
+
+void CoulombPBCAA::createResource(ResourceCollection& collection) const
+{
+  auto new_res = std::make_unique<CoulombPBCAAMultiWalkerResource>();
+  auto resource_index = collection.addResource(std::move(new_res));
+}
+
+void CoulombPBCAA::acquireResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<OperatorBase>& o_list) const
+{
+  auto& O_leader = o_list.getCastedLeader<CoulombPBCAA>();
+  auto res_ptr   = dynamic_cast<CoulombPBCAAMultiWalkerResource*>(collection.lendResource().release());
+  if (!res_ptr)
+    throw std::runtime_error("CoulombPBCAA::acquireResource dynamic_cast failed");
+  O_leader.mw_res_.reset(res_ptr);
+}
+
+void CoulombPBCAA::releaseResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<OperatorBase>& o_list) const
+{
+  auto& O_leader = o_list.getCastedLeader<CoulombPBCAA>();
+  collection.takebackResource(std::move(O_leader.mw_res_));
 }
 
 std::unique_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
