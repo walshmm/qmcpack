@@ -351,7 +351,3 @@ group](https://groups.google.com/forum/#!forum/qmcpack), to create a GitHub issu
 advance.
 
 Contributions are made under the same UIUC/NCSA open source license that covers QMCPACK. Please contact us if this is problematic.
-
-
-TEST: Making an inconsiquential change at the end of the read me to make branch rebaseable for test
-TEST1: signed commit test
