@@ -136,7 +136,7 @@ gpg --import import.key
 rm import.key
 git config --global user.signingkey "$QMCPACK_BOT_GPG_SIGNING_KEY"  
 git commit --allow-empty -S -m "Rebased Signed Off by QMCPACK-Bot"
-git push fork HEAD
+git push fork fork/$HEAD_BRANCH:$HEAD_BRANCH
 
 COMMIT_SHA=$(git rev-parse --verify HEAD)
 
