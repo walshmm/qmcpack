@@ -46,9 +46,8 @@ SPOSetT<T>::extractOptimizableObjectRefs(UniqueOptObjRefsT<T>&)
             "must be overloaded when the SPOSet is optimizable.");
 }
 
-template <class T>
-void
-SPOSetT<T>::checkOutVariables(const OptVariablesType<T>& active)
+template<class T>
+void SPOSetT<T>::checkOutVariables(const OptVariablesTypeT<T>& active)
 {
     if (isOptimizable())
         throw std::logic_error("Bug!! " + getClassName() +
@@ -283,11 +282,13 @@ SPOSetT<T>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
             "must be overloaded when the SPOSet supports rotation.");
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
-    const OptVariablesType<T>& optvars, Vector<T>& dlogpsi,
-    Vector<T>& dhpsioverpsi, const int& FirstIndex, const int& LastIndex)
+template<class T>
+void SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
+                                     const OptVariablesTypeT<T>& optvars,
+                                     Vector<T>& dlogpsi,
+                                     Vector<T>& dhpsioverpsi,
+                                     const int& FirstIndex,
+                                     const int& LastIndex)
 {
     if (isOptimizable())
         throw std::logic_error("Bug!! " + getClassName() +
@@ -295,11 +296,12 @@ SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
             "must be overloaded when the SPOSet is optimizable.");
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
-    const OptVariablesType<T>& optvars, Vector<T>& dlogpsi, int FirstIndex,
-    int LastIndex)
+template<class T>
+void SPOSetT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
+                                       const OptVariablesTypeT<T>& optvars,
+                                       Vector<T>& dlogpsi,
+                                       int FirstIndex,
+                                       int LastIndex)
 {
     if (isOptimizable())
         throw std::logic_error("Bug!! " + getClassName() +
@@ -307,12 +309,15 @@ SPOSetT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
             "must be overloaded when the SPOSet is optimizable.");
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
-    const OptVariablesType<T>& optvars, ValueVector& psi,
-    const ValueVector& psiinv, std::vector<T>& ratios, Matrix<T>& dratios,
-    int FirstIndex, int LastIndex)
+template<class T>
+void SPOSetT<T>::evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
+                                     const OptVariablesTypeT<T>& optvars,
+                                     ValueVector& psi,
+                                     const ValueVector& psiinv,
+                                     std::vector<T>& ratios,
+                                     Matrix<T>& dratios,
+                                     int FirstIndex,
+                                     int LastIndex)
 {
     // Match the fallback in WaveFunctionComponent that evaluates just the
     // ratios
@@ -324,21 +329,33 @@ SPOSetT<T>::evaluateDerivRatios(const VirtualParticleSetT<T>& VP,
             "must be overloaded when the SPOSet is optimizable.");
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
-    const OptVariablesType<T>& optvars, Vector<T>& dlogpsi,
-    Vector<T>& dhpsioverpsi, const T& psiCurrent, const std::vector<T>& Coeff,
-    const std::vector<size_t>& C2node_up, const std::vector<size_t>& C2node_dn,
-    const ValueVector& detValues_up, const ValueVector& detValues_dn,
-    const GradMatrix& grads_up, const GradMatrix& grads_dn,
-    const ValueMatrix& lapls_up, const ValueMatrix& lapls_dn,
-    const ValueMatrix& M_up, const ValueMatrix& M_dn,
-    const ValueMatrix& Minv_up, const ValueMatrix& Minv_dn,
-    const GradMatrix& B_grad, const ValueMatrix& B_lapl,
-    const std::vector<int>& detData_up, const size_t N1, const size_t N2,
-    const size_t NP1, const size_t NP2,
-    const std::vector<std::vector<int>>& lookup_tbl)
+template<class T>
+void SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
+                                     const OptVariablesTypeT<T>& optvars,
+                                     Vector<T>& dlogpsi,
+                                     Vector<T>& dhpsioverpsi,
+                                     const T& psiCurrent,
+                                     const std::vector<T>& Coeff,
+                                     const std::vector<size_t>& C2node_up,
+                                     const std::vector<size_t>& C2node_dn,
+                                     const ValueVector& detValues_up,
+                                     const ValueVector& detValues_dn,
+                                     const GradMatrix& grads_up,
+                                     const GradMatrix& grads_dn,
+                                     const ValueMatrix& lapls_up,
+                                     const ValueMatrix& lapls_dn,
+                                     const ValueMatrix& M_up,
+                                     const ValueMatrix& M_dn,
+                                     const ValueMatrix& Minv_up,
+                                     const ValueMatrix& Minv_dn,
+                                     const GradMatrix& B_grad,
+                                     const ValueMatrix& B_lapl,
+                                     const std::vector<int>& detData_up,
+                                     const size_t N1,
+                                     const size_t N2,
+                                     const size_t NP1,
+                                     const size_t NP2,
+                                     const std::vector<std::vector<int>>& lookup_tbl)
 {
     if (isOptimizable())
         throw std::logic_error("Bug!! " + getClassName() +
@@ -346,17 +363,22 @@ SPOSetT<T>::evaluateDerivatives(ParticleSetT<T>& P,
             "must be overloaded when the SPOSet is optimizable.");
 }
 
-template <class T>
-void
-SPOSetT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
-    const OptVariablesType<T>& optvars, Vector<ValueType>& dlogpsi,
-    const ValueType& psiCurrent, const std::vector<T>& Coeff,
-    const std::vector<size_t>& C2node_up, const std::vector<size_t>& C2node_dn,
-    const ValueVector& detValues_up, const ValueVector& detValues_dn,
-    const ValueMatrix& M_up, const ValueMatrix& M_dn,
-    const ValueMatrix& Minv_up, const ValueMatrix& Minv_dn,
-    const std::vector<int>& detData_up,
-    const std::vector<std::vector<int>>& lookup_tbl)
+template<class T>
+void SPOSetT<T>::evaluateDerivativesWF(ParticleSetT<T>& P,
+                                       const OptVariablesTypeT<T>& optvars,
+                                       Vector<ValueType>& dlogpsi,
+                                       const ValueType& psiCurrent,
+                                       const std::vector<T>& Coeff,
+                                       const std::vector<size_t>& C2node_up,
+                                       const std::vector<size_t>& C2node_dn,
+                                       const ValueVector& detValues_up,
+                                       const ValueVector& detValues_dn,
+                                       const ValueMatrix& M_up,
+                                       const ValueMatrix& M_dn,
+                                       const ValueMatrix& Minv_up,
+                                       const ValueMatrix& Minv_dn,
+                                       const std::vector<int>& detData_up,
+                                       const std::vector<std::vector<int>>& lookup_tbl)
 {
     if (isOptimizable())
         throw std::logic_error("Bug!! " + getClassName() +

@@ -23,7 +23,6 @@ add_subdirectory(detail)
 
 set(WFBASE_SRCS
     OptimizableFunctorBase.cpp
-    VariableSet.cpp
     VariableSetT.cpp
     WaveFunctionPool.cpp
     WaveFunctionComponent.cpp
@@ -44,10 +43,6 @@ set(WFBASE_SRCS
     ExampleHeComponent.cpp
     RotatedSPOsT.cpp
     SpinorSetT.cpp)
-
-if(NOT QMC_COMPLEX)
-  set(WFBASE_SRCS ${WFBASE_SRCS} RotatedSPOs.cpp)
-endif(NOT QMC_COMPLEX)
 
 if(QMC_COMPLEX)
   set(WFBASE_SRCS ${WFBASE_SRCS} SpinorSet.cpp)
@@ -139,11 +134,8 @@ if(OHMMS_DIM MATCHES 3)
     else(QMC_COMPLEX)
       set(FERMION_SRCS ${FERMION_SRCS}
         BsplineFactory/createRealSingle.cpp
-        BsplineFactory/createRealDouble.cpp
-        BsplineFactory/SplineC2R.cpp
-        BsplineFactory/SplineR2R.cpp)
-      set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS}
-        BsplineFactory/SplineC2ROMPTarget.cpp)
+        BsplineFactory/createRealDouble.cpp)
+      set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS})
     endif(QMC_COMPLEX)
 
   endif(HAVE_EINSPLINE)

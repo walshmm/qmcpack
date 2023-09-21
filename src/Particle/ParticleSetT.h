@@ -75,6 +75,8 @@ public:
     using Index_t = typename LatticeParticleTraits<T>::Index_t;
     using Scalar_t = typename LatticeParticleTraits<T>::Scalar_t;
     using Tensor_t = typename LatticeParticleTraits<T>::Tensor_t;
+    using GradType = typename ParticleSetTraits<T>::GradType;
+
     using ParticleLayout = typename LatticeParticleTraits<T>::ParticleLayout;
     using SingleParticlePos =
         typename LatticeParticleTraits<T>::SingleParticlePos;
@@ -94,6 +96,9 @@ public:
     using PropertyContainer_t = typename Walker_t::PropertyContainer_t;
     /// buffer type for a serialized buffer
     using Buffer_t = PooledData<RealType>;
+
+    using SingleParticleValue = typename LatticeParticleTraits<T>::SingleParticleValue;
+
     enum quantum_domains
     {
         no_quantum_domain = 0,

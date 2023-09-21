@@ -25,6 +25,7 @@
 namespace qmcplusplus
 {
 using SPOSet = SPOSetT<QMCTraits::ValueType>;
+using SPOSetPtr = SPOSet*;
 
 } // namespace qmcplusplus
 #endif
