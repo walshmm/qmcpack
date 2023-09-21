@@ -19,7 +19,7 @@
 
 #include "Numerics/MatrixOperators.h"
 #include "Numerics/DeterminantOperators.h"
-
+#include "Particle/VirtualParticleSet.h"
 namespace qmcplusplus
 {
 /** class to handle linear combinations of basis orbitals used to evaluate the Dirac determinants.

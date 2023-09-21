@@ -17,7 +17,6 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOInfo.h"
 
-
 namespace qmcplusplus
 {
 struct SHOState : public SPOInfo

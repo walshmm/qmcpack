@@ -17,12 +17,12 @@
 #include "LCAOrbitalSet.h"
 #include "SoaCuspCorrection.h"
 #include "CuspCorrection.h"
+#include "ParticleSet.h"
 
 class Communicate;
 namespace qmcplusplus
 {
 
-class ParticleSet;
 /// Broadcast cusp correction parameters
 void broadcastCuspInfo(CuspCorrectionParameters& param, Communicate& Comm, int root);
 

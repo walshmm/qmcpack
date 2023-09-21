@@ -33,7 +33,6 @@ set(WFBASE_SRCS
     SPOInfo.cpp
     SPOSetInfo.cpp
     SPOSetInputInfo.cpp
-    SPOSet.cpp
     SPOSetT.cpp
     CompositeSPOSet.cpp
     CompositeSPOSetT.cpp

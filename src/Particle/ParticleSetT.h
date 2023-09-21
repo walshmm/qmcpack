@@ -30,7 +30,7 @@
 #include "ParticleTags.h"
 #include "Pools/PooledData.h"
 #include "ResourceHandle.h"
-#include "SimulationCellT.h"
+#include "SimulationCell.h"
 #include "SpeciesSet.h"
 #include "Utilities/TimerManager.h"
 #include "Walker.h"
@@ -81,6 +81,7 @@ public:
     using ParticleIndex = typename LatticeParticleTraits<T>::ParticleIndex;
     using ParticlePos = typename LatticeParticleTraits<T>::ParticlePos;
     using ParticleScalar = typename LatticeParticleTraits<T>::ParticleScalar;
+    using ParticleTensor = ParticleAttrib<Tensor_t>;
     using ParticleGradient =
         typename LatticeParticleTraits<T>::ParticleGradient;
     using ParticleLaplacian =
@@ -93,7 +94,6 @@ public:
     using PropertyContainer_t = typename Walker_t::PropertyContainer_t;
     /// buffer type for a serialized buffer
     using Buffer_t = PooledData<RealType>;
-
     enum quantum_domains
     {
         no_quantum_domain = 0,

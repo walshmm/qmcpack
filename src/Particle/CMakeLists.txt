@@ -15,19 +15,15 @@
 set(PARTICLE
     InitMolecularSystem.cpp
     InitMolecularSystemT.cpp
-    SimulationCell.cpp
     SimulationCellT.cpp
     ParticleSetPool.cpp
     ParticleSetPoolT.cpp
-    ParticleSet.cpp
     ParticleSetT.cpp
     PSdispatcher.cpp
-    VirtualParticleSet.cpp
     VirtualParticleSetT.cpp
     ParticleSet.BC.cpp
     DynamicCoordinatesBuilder.cpp
     DynamicCoordinatesT.cpp
-    MCCoords.cpp
     MCCoordsT.cpp
     MCWalkerConfiguration.cpp
     MCWalkerConfigurationT.cpp
@@ -39,9 +35,7 @@ set(PARTICLE
     createDistanceTableAB.cpp
     createDistanceTableT.cpp
     HDFWalkerInputManager.cpp
-    LongRange/KContainer.cpp
     LongRange/KContainerT.cpp
-    LongRange/StructFact.cpp
     LongRange/StructFactT.cpp
     LongRange/LPQHIBasis.cpp
     LongRange/LPQHISRCoulombBasis.cpp

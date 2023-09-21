@@ -25,6 +25,7 @@
 #include "Configuration.h"
 #include "Particle/Walker.h"
 #include "Utilities/IteratorUtility.h"
+#include "Particle/ParticleSetTraits.h"
 
 namespace qmcplusplus
 {
@@ -57,7 +58,7 @@ class WalkerConfigurations
 {
 public:
   /// walker type
-  using Walker_t         = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using Walker_t         = Walker<ParticleSetTraits<QMCTraits::ValueType>, LatticeParticleTraits<QMCTraits::ValueType>>;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///container type of Walkers
   using walker_list__t = std::vector<std::unique_ptr<Walker_t>>;

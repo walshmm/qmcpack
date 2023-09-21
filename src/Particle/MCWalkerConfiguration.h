@@ -26,6 +26,7 @@
 #include "Particle/WalkerConfigurations.h"
 #include "Particle/Walker.h"
 #include "Particle/SampleStack.h"
+#include "Particle/SimulationCell.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus

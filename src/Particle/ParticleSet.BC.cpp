@@ -15,7 +15,7 @@
 /**@file ParticleSet.BC.cpp
  * @brief definition of functions controlling Boundary Conditions
  */
-#include "Particle/ParticleSet.h"
+#include "Particle/ParticleSetT.h"
 #include "Particle/FastParticleOperators.h"
 #include "Concurrency/OpenMP.h"
 #include "LongRange/StructFact.h"
@@ -26,7 +26,8 @@ namespace qmcplusplus
  *
  * Currently testing only 1 component for PBCs.
  */
-void ParticleSet::createSK()
+template<typename T>
+void ParticleSetT<T>::createSK()
 {
   if (structure_factor_)
     throw std::runtime_error("Report bug! structure_factor_ has already been created. Unexpected call sequence.");
@@ -57,7 +58,8 @@ void ParticleSet::createSK()
   coordinates_->setAllParticlePos(R);
 }
 
-void ParticleSet::turnOnPerParticleSK()
+template<typename T>
+void ParticleSetT<T>::turnOnPerParticleSK()
 {
   if (structure_factor_)
     structure_factor_->turnOnStorePerParticle(*this);
@@ -66,7 +68,8 @@ void ParticleSet::turnOnPerParticleSK()
                              "structure_factor_ but structure_factor_ has not been created.");
 }
 
-bool ParticleSet::getPerParticleSKState() const
+template<typename T>
+bool ParticleSetT<T>::getPerParticleSKState() const
 {
   bool isPerParticleOn = false;
   if (structure_factor_)
@@ -74,7 +77,8 @@ bool ParticleSet::getPerParticleSKState() const
   return isPerParticleOn;
 }
 
-void ParticleSet::convert(const ParticlePos& pin, ParticlePos& pout)
+template<typename T>
+void ParticleSetT<T>::convert(const ParticlePos& pin, ParticlePos& pout)
 {
   if (pin.getUnit() == pout.getUnit())
   {
@@ -84,74 +88,84 @@ void ParticleSet::convert(const ParticlePos& pin, ParticlePos& pout)
   if (pin.getUnit() == PosUnit::Lattice)
   //convert to CartesianUnit
   {
-    ConvertPosUnit<ParticlePos, Tensor_t, DIM>::apply(pin, getLattice().R, pout, 0, pin.size());
+    ConvertPosUnit<ParticlePos, Tensor_t, QMCTraits::DIM>::apply(pin, getLattice().R, pout, 0, pin.size());
   }
   else
   //convert to getLattice()Unit
   {
-    ConvertPosUnit<ParticlePos, Tensor_t, DIM>::apply(pin, getLattice().G, pout, 0, pin.size());
+    ConvertPosUnit<ParticlePos, Tensor_t, QMCTraits::DIM>::apply(pin, getLattice().G, pout, 0, pin.size());
   }
 }
 
-void ParticleSet::convert2Unit(const ParticlePos& pin, ParticlePos& pout)
+template<typename T>
+void ParticleSetT<T>::convert2Unit(const ParticlePos& pin, ParticlePos& pout)
 {
   pout.setUnit(PosUnit::Lattice);
   if (pin.getUnit() == PosUnit::Lattice)
     pout = pin;
   else
-    ConvertPosUnit<ParticlePos, Tensor_t, DIM>::apply(pin, getLattice().G, pout, 0, pin.size());
+    ConvertPosUnit<ParticlePos, Tensor_t, QMCTraits::DIM>::apply(pin, getLattice().G, pout, 0, pin.size());
 }
 
-void ParticleSet::convert2Cart(const ParticlePos& pin, ParticlePos& pout)
+template<typename T>
+void ParticleSetT<T>::convert2Cart(const ParticlePos& pin, ParticlePos& pout)
 {
   pout.setUnit(PosUnit::Cartesian);
   if (pin.getUnit() == PosUnit::Cartesian)
     pout = pin;
   else
-    ConvertPosUnit<ParticlePos, Tensor_t, DIM>::apply(pin, getLattice().R, pout, 0, pin.size());
+    ConvertPosUnit<ParticlePos, Tensor_t, QMCTraits::DIM>::apply(pin, getLattice().R, pout, 0, pin.size());
 }
 
-void ParticleSet::convert2Unit(ParticlePos& pinout)
+template<typename T>
+void ParticleSetT<T>::convert2Unit(ParticlePos& pinout)
 {
   if (pinout.getUnit() == PosUnit::Lattice)
     return;
   else
   {
     pinout.setUnit(PosUnit::Lattice);
-    ConvertPosUnit<ParticlePos, Tensor_t, DIM>::apply(pinout, getLattice().G, 0, pinout.size());
+    ConvertPosUnit<ParticlePos, Tensor_t, QMCTraits::DIM>::apply(pinout, getLattice().G, 0, pinout.size());
   }
 }
 
-void ParticleSet::convert2Cart(ParticlePos& pinout)
+template<typename T>
+void ParticleSetT<T>::convert2Cart(ParticlePos& pinout)
 {
   if (pinout.getUnit() == PosUnit::Cartesian)
     return;
   else
   {
     pinout.setUnit(PosUnit::Cartesian);
-    ConvertPosUnit<ParticlePos, Tensor_t, DIM>::apply(pinout, getLattice().R, 0, pinout.size());
+    ConvertPosUnit<ParticlePos, Tensor_t, QMCTraits::DIM>::apply(pinout, getLattice().R, 0, pinout.size());
   }
 }
 
-void ParticleSet::applyBC(const ParticlePos& pin, ParticlePos& pout) { applyBC(pin, pout, 0, pin.size()); }
+template<typename T>
+void ParticleSetT<T>::applyBC(const ParticlePos& pin, ParticlePos& pout)
+{
+  applyBC(pin, pout, 0, pin.size());
+}
 
-void ParticleSet::applyBC(const ParticlePos& pin, ParticlePos& pout, int first, int last)
+template<typename T>
+void ParticleSetT<T>::applyBC(const ParticlePos& pin, ParticlePos& pout, int first, int last)
 {
   if (pin.getUnit() == PosUnit::Cartesian)
   {
     if (pout.getUnit() == PosUnit::Cartesian)
-      ApplyBConds<ParticlePos, Tensor_t, DIM>::Cart2Cart(pin, getLattice().G, getLattice().R, pout, first, last);
+      ApplyBConds<ParticlePos, Tensor_t, QMCTraits::DIM>::Cart2Cart(pin, getLattice().G, getLattice().R, pout, first,
+                                                                    last);
     else if (pout.getUnit() == PosUnit::Lattice)
-      ApplyBConds<ParticlePos, Tensor_t, DIM>::Cart2Unit(pin, getLattice().G, pout, first, last);
+      ApplyBConds<ParticlePos, Tensor_t, QMCTraits::DIM>::Cart2Unit(pin, getLattice().G, pout, first, last);
     else
       throw std::runtime_error("Unknown unit conversion");
   }
   else if (pin.getUnit() == PosUnit::Lattice)
   {
     if (pout.getUnit() == PosUnit::Cartesian)
-      ApplyBConds<ParticlePos, Tensor_t, DIM>::Unit2Cart(pin, getLattice().R, pout, first, last);
+      ApplyBConds<ParticlePos, Tensor_t, QMCTraits::DIM>::Unit2Cart(pin, getLattice().R, pout, first, last);
     else if (pout.getUnit() == PosUnit::Lattice)
-      ApplyBConds<ParticlePos, Tensor_t, DIM>::Unit2Unit(pin, pout, first, last);
+      ApplyBConds<ParticlePos, Tensor_t, QMCTraits::DIM>::Unit2Unit(pin, pout, first, last);
     else
       throw std::runtime_error("Unknown unit conversion");
   }
@@ -159,19 +173,21 @@ void ParticleSet::applyBC(const ParticlePos& pin, ParticlePos& pout, int first, 
     throw std::runtime_error("Unknown unit conversion");
 }
 
-void ParticleSet::applyBC(ParticlePos& pos)
+template<typename T>
+void ParticleSetT<T>::applyBC(ParticlePos& pos)
 {
   if (pos.getUnit() == PosUnit::Lattice)
   {
-    ApplyBConds<ParticlePos, Tensor_t, DIM>::Unit2Unit(pos, 0, TotalNum);
+    ApplyBConds<ParticlePos, Tensor_t, QMCTraits::DIM>::Unit2Unit(pos, 0, TotalNum);
   }
   else
   {
-    ApplyBConds<ParticlePos, Tensor_t, DIM>::Cart2Cart(pos, getLattice().G, getLattice().R, 0, TotalNum);
+    ApplyBConds<ParticlePos, Tensor_t, QMCTraits::DIM>::Cart2Cart(pos, getLattice().G, getLattice().R, 0, TotalNum);
   }
 }
 
-void ParticleSet::applyMinimumImage(ParticlePos& pinout)
+template<typename T>
+void ParticleSetT<T>::applyMinimumImage(ParticlePos& pinout)
 {
   if (getLattice().SuperCellEnum == SUPERCELL_OPEN)
     return;
@@ -179,14 +195,16 @@ void ParticleSet::applyMinimumImage(ParticlePos& pinout)
     getLattice().applyMinimumImage(pinout[i]);
 }
 
-void ParticleSet::convert2UnitInBox(const ParticlePos& pin, ParticlePos& pout)
+template<typename T>
+void ParticleSetT<T>::convert2UnitInBox(const ParticlePos& pin, ParticlePos& pout)
 {
   pout.setUnit(PosUnit::Lattice);
   convert2Unit(pin, pout); // convert to crystalline unit
   put2box(pout);
 }
 
-void ParticleSet::convert2CartInBox(const ParticlePos& pin, ParticlePos& pout)
+template<typename T>
+void ParticleSetT<T>::convert2CartInBox(const ParticlePos& pin, ParticlePos& pout)
 {
   convert2UnitInBox(pin, pout); // convert to crystalline unit
   convert2Cart(pout);

@@ -29,7 +29,7 @@
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "OptimizableObjectT.h"
-#include "Particle/ParticleSetT.h"
+#include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSetT.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 
