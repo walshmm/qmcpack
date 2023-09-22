@@ -211,8 +211,8 @@ void ParticleSetT<T>::convert2CartInBox(const ParticlePos& pin, ParticlePos& pou
 }
 
 template class ParticleSetT<double>;
-//template class ParticleSetT<float>;
-//template class ParticleSetT<std::complex<double>>;
-//template class ParticleSetT<std::complex<float>>;
+template class ParticleSetT<float>;
+template class ParticleSetT<std::complex<double>>;
+template class ParticleSetT<std::complex<float>>;
 
 } // namespace qmcplusplus

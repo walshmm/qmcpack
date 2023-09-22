@@ -30,7 +30,7 @@
 #include "ParticleTags.h"
 #include "Pools/PooledData.h"
 #include "ResourceHandle.h"
-#include "SimulationCell.h"
+#include "SimulationCellT.h"
 #include "SpeciesSet.h"
 #include "Utilities/TimerManager.h"
 #include "Walker.h"

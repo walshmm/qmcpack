@@ -25,7 +25,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
-#include "Particle/ParticleSet.h"
+#include "Particle/ParticleSetT.h"
 #include "Particle/ParticleSetTraits.h"
 
 namespace qmcplusplus
