@@ -12,6 +12,7 @@
 
 
 #include "SHOSet.h"
+#include "SimulationCell.h"
 #include "Utilities/string_utils.h"
 
 namespace qmcplusplus

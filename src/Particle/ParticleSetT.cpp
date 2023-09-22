@@ -33,6 +33,8 @@
 #include "ResourceCollection.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/RandomGenerator.h"
+#include "Particle/FastParticleOperators.h"
+#include "Concurrency/OpenMP.h"
 
 #include <iomanip>
 #include <numeric>

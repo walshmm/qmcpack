@@ -14,6 +14,6 @@
 #ifndef QMCPLUSPLUS_DISTANCETABLE_H
 #define QMCPLUSPLUS_DISTANCETABLE_H
 
-#include "Particle/createDistanceTable.h"
+#include "Particle/createDistanceTableT.h"
 
 #endif

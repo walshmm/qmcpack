@@ -20,6 +20,7 @@
 #define QMCPLUSPLUS_PARTICLESET_H
 
 #include "Particle/ParticleSetT.h"
+#include "Particle/SimulationCell.h"
 
 namespace qmcplusplus
 {
