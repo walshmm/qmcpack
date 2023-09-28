@@ -117,7 +117,6 @@ if(OHMMS_DIM MATCHES 3)
         BsplineFactory/SplineC2RT.cpp
         BsplineFactory/SplineR2RT.cpp
         BsplineFactory/SplineC2CT.cpp
-        BsplineFactory/BsplineReaderBase.cpp
         BsplineFactory/BsplineReaderBaseT.cpp)
     set(FERMION_OMPTARGET_SRCS
         Fermion/DiracDeterminantBatched.cpp

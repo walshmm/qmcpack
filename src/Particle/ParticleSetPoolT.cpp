@@ -270,9 +270,11 @@ ParticleSetPoolT<T>::reset()
 }
 
 // explicit instantiations
+#ifndef QMC_COMPLEX
 template class ParticleSetPoolT<double>;
 template class ParticleSetPoolT<float>;
+#else
 template class ParticleSetPoolT<std::complex<double>>;
 template class ParticleSetPoolT<std::complex<float>>;
-
+#endif
 } // namespace qmcplusplus

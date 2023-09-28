@@ -262,7 +262,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if (MixedSplineReader == 0)
     {
       if (use_single)
-        MixedSplineReader = createBsplineRealSingle(this, hybrid_rep == "yes", useGPU);
+        MixedSplineReader = createBsplineRealSingleT(this, hybrid_rep == "yes", useGPU);
       else
         MixedSplineReader = createBsplineRealDouble(this, hybrid_rep == "yes", useGPU);
     }
@@ -273,9 +273,9 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if (MixedSplineReader == 0)
     {
       if (use_single)
-        MixedSplineReader = createBsplineComplexSingle(this, hybrid_rep == "yes", useGPU);
+        MixedSplineReader = createBsplineComplexSingleT(this, hybrid_rep == "yes", useGPU);
       else
-        MixedSplineReader = createBsplineComplexDouble(this, hybrid_rep == "yes", useGPU);
+        MixedSplineReader = createBsplineComplexDoubleT(this, hybrid_rep == "yes", useGPU);
     }
   }
 

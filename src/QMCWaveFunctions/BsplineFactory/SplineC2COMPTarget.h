@@ -22,9 +22,8 @@
 
 namespace qmcplusplus
 {
-
-template<class T>
-using SplineC2COMPTarget = SplineC2COMPTargetT<T>;
+template<class ST>
+using SplineC2COMPTarget = SplineC2COMPTargetT<ST, QMCTraits::ValueType>;
 
 } // namespace qmcplusplus
 #endif
