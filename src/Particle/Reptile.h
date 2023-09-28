@@ -29,10 +29,10 @@
 #include "QMCDrivers/WalkerProperties.h"
 #include "Configuration.h"
 #include "Walker.h"
+#include "Particle/MCWalkerConfiguration.h"
 
 namespace qmcplusplus
 {
-class MCWalkerConfiguration;
 
 class Reptile : public QMCTraits
 {

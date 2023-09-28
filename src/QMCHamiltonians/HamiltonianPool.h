@@ -22,6 +22,7 @@
 #include "Message/MPIObjectBase.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
+#include "Particle/MCWalkerConfiguration.h"
 
 #include <map>
 
@@ -29,7 +30,6 @@ struct Libxml2Document;
 
 namespace qmcplusplus
 {
-class MCWalkerConfiguration;
 class WaveFunctionPool;
 
 /** @ingroup qmcapp

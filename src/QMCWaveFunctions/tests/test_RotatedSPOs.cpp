@@ -23,6 +23,7 @@
 #include "checkMatrix.hpp"
 #include "FakeSPO.h"
 #include <ResourceCollection.h>
+#include "QMCWaveFunctions/VariableSet.h"
 
 #include <stdio.h>
 #include <string>

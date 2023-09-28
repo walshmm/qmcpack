@@ -27,7 +27,6 @@ set(WFBASE_SRCS
     WaveFunctionPool.cpp
     WaveFunctionComponent.cpp
     WaveFunctionComponentBuilder.cpp
-    SPOSetBuilder.cpp
     SPOSetBuilderT.cpp
     SPOInfo.cpp
     SPOSetInfo.cpp

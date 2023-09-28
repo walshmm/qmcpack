@@ -30,10 +30,10 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "io/hdf/hdf_archive.h"
 #include <bitset>
+#include "Particle/MCWalkerConfiguration.h"
 
 namespace qmcplusplus
 {
-class MCWalkerConfiguration;
 class QMCHamiltonian;
 class CollectablesEstimator;
 

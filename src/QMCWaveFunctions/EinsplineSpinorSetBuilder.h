@@ -19,6 +19,7 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_SPINORSET_BUILDER_H
 #define QMCPLUSPLUS_EINSPLINE_SPINORSET_BUILDER_H
 
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 class Communicate;

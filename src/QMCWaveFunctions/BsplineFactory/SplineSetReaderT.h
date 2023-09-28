@@ -20,8 +20,10 @@
 #define QMCPLUSPLUS_SPLINESET_READERT_H
 #include "BsplineFactory/BsplineReaderBaseT.h"
 #include "Utilities/FairDivide.h"
+#include "Utilities/ProgressReportEngine.h"
 #include "mpi/collectives.h"
 #include "mpi/point2point.h"
+#include "fftw3.h"
 
 namespace qmcplusplus
 {

@@ -28,7 +28,8 @@ namespace qmcplusplus
  *
  * Only works with SPLINEBASE class containing complex splines
  */
-using HybridRepCplx = HybridRepCplxT<QMCTraits::ValueType>;
+template<typename SPLINEBASE>
+using HybridRepCplx = HybridRepCplxT<SPLINEBASE>;
 
 } // namespace qmcplusplus
 #endif

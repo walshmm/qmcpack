@@ -49,26 +49,10 @@ using ValueApprox = typename ValueApproxHelper<T>::Type;
 
 namespace testing
 {
-OptVariablesType<float>&
-getMyVars(SPOSetT<float>& rot)
-{
-    return rot.myVars;
-}
-OptVariablesType<double>&
-getMyVars(SPOSetT<double>& rot)
-{
-    return rot.myVars;
-}
-OptVariablesType<float>&
-getMyVarsFull(RotatedSPOsT<float>& rot)
-{
-    return rot.myVarsFull;
-}
-OptVariablesType<double>&
-getMyVarsFull(RotatedSPOsT<double>& rot)
-{
-    return rot.myVarsFull;
-}
+OptVariablesTypeT<float>& getMyVars(SPOSetT<float>& rot) { return rot.myVars; }
+OptVariablesTypeT<double>& getMyVars(SPOSetT<double>& rot) { return rot.myVars; }
+OptVariablesTypeT<float>& getMyVarsFull(RotatedSPOsT<float>& rot) { return rot.myVarsFull; }
+OptVariablesTypeT<double>& getMyVarsFull(RotatedSPOsT<double>& rot) { return rot.myVarsFull; }
 std::vector<std::vector<float>>&
 getHistoryParams(RotatedSPOsT<float>& rot)
 {
@@ -667,7 +651,7 @@ TEMPLATE_TEST_CASE(
     CHECK(std::real(d2psiM_bare[0][0]) ==
         ValueApprox<TestType>(5.303848362116568));
 
-    OptVariablesType<TestType> opt_vars;
+    OptVariablesTypeT<TestType> opt_vars;
     rot_spo->checkInVariablesExclusive(opt_vars);
     opt_vars.resetIndex();
     rot_spo->checkOutVariables(opt_vars);
