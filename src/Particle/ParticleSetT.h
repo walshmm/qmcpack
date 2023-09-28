@@ -83,7 +83,6 @@ public:
     using ParticleIndex = typename LatticeParticleTraits<T>::ParticleIndex;
     using ParticlePos = typename LatticeParticleTraits<T>::ParticlePos;
     using ParticleScalar = typename LatticeParticleTraits<T>::ParticleScalar;
-    using ParticleTensor = ParticleAttrib<Tensor_t>;
     using ParticleGradient =
         typename LatticeParticleTraits<T>::ParticleGradient;
     using ParticleLaplacian =

@@ -16,7 +16,6 @@ set(PARTICLE
     InitMolecularSystem.cpp
     InitMolecularSystemT.cpp
     SimulationCellT.cpp
-    ParticleSetPool.cpp
     ParticleSetPoolT.cpp
     ParticleSetT.cpp
     PSdispatcher.cpp
