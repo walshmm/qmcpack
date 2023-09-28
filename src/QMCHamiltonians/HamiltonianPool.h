@@ -21,6 +21,8 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Message/MPIObjectBase.h"
 #include "Particle/ParticleSet.h"
+#include "Particle/ParticleSetPool.h"
+
 #include <map>
 
 struct Libxml2Document;
@@ -28,7 +30,6 @@ struct Libxml2Document;
 namespace qmcplusplus
 {
 class MCWalkerConfiguration;
-class ParticleSetPool;
 class WaveFunctionPool;
 
 /** @ingroup qmcapp

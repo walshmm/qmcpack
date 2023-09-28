@@ -20,8 +20,8 @@
 
 namespace qmcplusplus
 {
-template<class T>
-using SplineR2R = SplineR2RT<T>;
+template<class ST>
+using SplineR2R = SplineR2RT<ST, QMCTraits::ValueType>;
 
 } // namespace qmcplusplus
 #endif

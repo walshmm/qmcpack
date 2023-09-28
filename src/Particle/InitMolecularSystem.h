@@ -19,12 +19,11 @@
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "ParticleSet.h"
+#include "Particle/ParticleSetPool.h"
 #include <map>
 
 namespace qmcplusplus
 {
-class ParticleSetPool;
-
 /* Engine to initialize the initial electronic structure for a molecular system
  */
 class InitMolecularSystem : public OhmmsElementBase

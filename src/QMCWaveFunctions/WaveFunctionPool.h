@@ -22,13 +22,13 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "Utilities/RuntimeOptions.h"
 #include "Particle/ParticleSet.h"
+#include "Particle/ParticleSetPool.h"
 
 #include <map>
 #include <string>
 
 namespace qmcplusplus
 {
-class ParticleSetPool;
 
 /** @ingroup qmcapp
  * @brief Manage a collection of TrialWaveFunction objects

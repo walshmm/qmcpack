@@ -501,10 +501,8 @@ private:
     static RefVectorWithLeader<SPOSetT<T>>
     extractPhiRefList(const RefVectorWithLeader<SPOSetT<T>>& spo_list);
 
-    friend OptVariablesType<double>&
-    testing::getMyVarsFull(RotatedSPOsT<double>& rot);
-    friend OptVariablesType<float>&
-    testing::getMyVarsFull(RotatedSPOsT<float>& rot);
+    friend OptVariablesTypeT<double>& testing::getMyVarsFull(RotatedSPOsT<double>& rot);
+    friend OptVariablesTypeT<float>& testing::getMyVarsFull(RotatedSPOsT<float>& rot);
     friend std::vector<std::vector<double>>&
     testing::getHistoryParams(RotatedSPOsT<double>& rot);
     friend std::vector<std::vector<float>>&

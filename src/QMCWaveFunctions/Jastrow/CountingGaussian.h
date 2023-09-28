@@ -14,6 +14,8 @@
 
 #include "OhmmsData/AttributeSet.h"
 #include "VariableSet.h"
+#include "QMCWaveFunctions/OptimizableObject.h"
+
 #include <array>
 
 namespace qmcplusplus

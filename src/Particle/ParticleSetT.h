@@ -65,245 +65,196 @@ template <typename T>
 class ParticleSetT : public OhmmsElementBase
 {
 public:
-    using RealType = typename ParticleSetTraits<T>::RealType;
-    using FullPrecRealType = typename ParticleSetTraits<T>::FullPrecRealType;
-    using ComplexType = typename ParticleSetTraits<T>::ComplexType;
-    using PosType = typename ParticleSetTraits<T>::PosType;
+  using ValueType        = T;
+  using RealType         = typename ParticleSetTraits<T>::RealType;
+  using FullPrecRealType = typename ParticleSetTraits<T>::FullPrecRealType;
+  using ComplexType      = typename ParticleSetTraits<T>::ComplexType;
+  using PosType          = typename ParticleSetTraits<T>::PosType;
 
-    using PropertySetType = typename ParticleSetTraits<T>::PropertySetType;
+  using PropertySetType = typename ParticleSetTraits<T>::PropertySetType;
 
-    using Index_t = typename LatticeParticleTraits<T>::Index_t;
-    using Scalar_t = typename LatticeParticleTraits<T>::Scalar_t;
-    using Tensor_t = typename LatticeParticleTraits<T>::Tensor_t;
-    using GradType = typename ParticleSetTraits<T>::GradType;
+  using Index_t  = typename LatticeParticleTraits<T>::Index_t;
+  using Scalar_t = typename LatticeParticleTraits<T>::Scalar_t;
+  using Tensor_t = typename LatticeParticleTraits<T>::Tensor_t;
+  using GradType = typename ParticleSetTraits<T>::GradType;
 
-    using ParticleLayout = typename LatticeParticleTraits<T>::ParticleLayout;
-    using SingleParticlePos =
-        typename LatticeParticleTraits<T>::SingleParticlePos;
-    using ParticleIndex = typename LatticeParticleTraits<T>::ParticleIndex;
-    using ParticlePos = typename LatticeParticleTraits<T>::ParticlePos;
-    using ParticleScalar = typename LatticeParticleTraits<T>::ParticleScalar;
-    using ParticleGradient =
-        typename LatticeParticleTraits<T>::ParticleGradient;
-    using ParticleLaplacian =
-        typename LatticeParticleTraits<T>::ParticleLaplacian;
-    using ParticleTensor = typename LatticeParticleTraits<T>::ParticleTensor;
+  using ParticleLayout    = typename LatticeParticleTraits<T>::ParticleLayout;
+  using SingleParticlePos = typename LatticeParticleTraits<T>::SingleParticlePos;
+  using ParticleIndex     = typename LatticeParticleTraits<T>::ParticleIndex;
+  using ParticlePos       = typename LatticeParticleTraits<T>::ParticlePos;
+  using ParticleScalar    = typename LatticeParticleTraits<T>::ParticleScalar;
+  using ParticleGradient  = typename LatticeParticleTraits<T>::ParticleGradient;
+  using ParticleLaplacian = typename LatticeParticleTraits<T>::ParticleLaplacian;
+  using ParticleTensor    = typename LatticeParticleTraits<T>::ParticleTensor;
 
-    /// walker type
-    using Walker_t = Walker<ParticleSetTraits<T>, LatticeParticleTraits<T>>;
-    /// container type to store the property
-    using PropertyContainer_t = typename Walker_t::PropertyContainer_t;
-    /// buffer type for a serialized buffer
-    using Buffer_t = PooledData<RealType>;
+  /// walker type
+  using Walker_t = Walker<ParticleSetTraits<T>, LatticeParticleTraits<T>>;
+  /// container type to store the property
+  using PropertyContainer_t = typename Walker_t::PropertyContainer_t;
+  /// buffer type for a serialized buffer
+  using Buffer_t = PooledData<RealType>;
 
-    using SingleParticleValue = typename LatticeParticleTraits<T>::SingleParticleValue;
+  using SingleParticleValue = typename LatticeParticleTraits<T>::SingleParticleValue;
 
-    enum quantum_domains
-    {
-        no_quantum_domain = 0,
-        classical,
-        quantum
-    };
+  enum quantum_domains
+  {
+    no_quantum_domain = 0,
+    classical,
+    quantum
+  };
 
-    static constexpr auto DIM = ParticleSetTraits<T>::DIM;
+  static constexpr auto DIM = ParticleSetTraits<T>::DIM;
 
-    /// quantum_domain of the particles, default = classical
-    quantum_domains quantum_domain;
+  /// quantum_domain of the particles, default = classical
+  quantum_domains quantum_domain;
 
-    //@{ public data members
-    /// Species ID
-    ParticleIndex GroupID;
-    /// Position
-    ParticlePos R;
-    /// internal spin variables for dynamical spin calculations
-    ParticleScalar spins;
-    /// gradients of the particles
-    ParticleGradient G;
-    /// laplacians of the particles
-    ParticleLaplacian L;
-    /// mass of each particle
-    ParticleScalar Mass;
-    /// charge of each particle
-    ParticleScalar Z;
+  //@{ public data members
+  /// Species ID
+  ParticleIndex GroupID;
+  /// Position
+  ParticlePos R;
+  /// internal spin variables for dynamical spin calculations
+  ParticleScalar spins;
+  /// gradients of the particles
+  ParticleGradient G;
+  /// laplacians of the particles
+  ParticleLaplacian L;
+  /// mass of each particle
+  ParticleScalar Mass;
+  /// charge of each particle
+  ParticleScalar Z;
 
-    /// the index of the active bead for particle-by-particle moves
-    Index_t activeBead;
-    /// the direction reptile traveling
-    Index_t direction;
+  /// the index of the active bead for particle-by-particle moves
+  Index_t activeBead;
+  /// the direction reptile traveling
+  Index_t direction;
 
-    /// Particle density in G-space for MPC interaction
-    std::vector<TinyVector<int, DIM>> DensityReducedGvecs;
-    std::vector<ComplexType> Density_G;
-    Array<RealType, DIM> Density_r;
+  /// Particle density in G-space for MPC interaction
+  std::vector<TinyVector<int, DIM>> DensityReducedGvecs;
+  std::vector<ComplexType> Density_G;
+  Array<RealType, DIM> Density_r;
 
-    /// DFT potential
-    std::vector<TinyVector<int, DIM>> VHXCReducedGvecs;
-    std::vector<ComplexType> VHXC_G[2];
-    Array<RealType, DIM> VHXC_r[2];
+  /// DFT potential
+  std::vector<TinyVector<int, DIM>> VHXCReducedGvecs;
+  std::vector<ComplexType> VHXC_G[2];
+  Array<RealType, DIM> VHXC_r[2];
 
-    /** name-value map of Walker Properties
+  /** name-value map of Walker Properties
      *
      * PropertyMap is used to keep the name-value mapping of
      * Walker_t::Properties.  PropertyList::Values are not
      * necessarily updated during the simulations.
      */
-    PropertySetType PropertyList;
+  PropertySetType PropertyList;
 
-    /** properties of the current walker
+  /** properties of the current walker
      *
      * The internal order is identical to PropertyList, which holds
      * the matching names.
      */
-    PropertyContainer_t Properties;
+  PropertyContainer_t Properties;
 
-    /** observables in addition to those registered in Properties/PropertyList
+  /** observables in addition to those registered in Properties/PropertyList
      *
      * Such observables as density, gofr, sk are not stored per walker but
      * collected during QMC iterations.
      */
-    Buffer_t Collectables;
+  Buffer_t Collectables;
 
-    /// Property history vector
-    std::vector<std::vector<FullPrecRealType>> PropertyHistory;
-    std::vector<int> PHindex;
-    ///@}
+  /// Property history vector
+  std::vector<std::vector<FullPrecRealType>> PropertyHistory;
+  std::vector<int> PHindex;
+  ///@}
 
-    /// current MC step
-    int current_step;
+  /// current MC step
+  int current_step;
 
-    /// default constructor
-    ParticleSetT(const SimulationCellT<T>& simulation_cell,
-        const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
+  /// default constructor
+  ParticleSetT(const SimulationCellT<T>& simulation_cell,
+               const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
-    /// copy constructor
-    ParticleSetT(const ParticleSetT& p);
+  /// copy constructor
+  ParticleSetT(const ParticleSetT& p);
 
-    /// default destructor
-    ~ParticleSetT() override;
+  /// default destructor
+  ~ParticleSetT() override;
 
-    /** create grouped particles
+  /** create grouped particles
      * @param agroup number of particles per group
      */
-    void
-    create(const std::vector<int>& agroup);
+  void create(const std::vector<int>& agroup);
 
-    /** print particle coordinates to a std::ostream
+  /** print particle coordinates to a std::ostream
      * @param os output stream
      * @param maxParticlesToPrint maximal number of particles to print. Pass 0
      * to print all.
      */
-    void
-    print(std::ostream& os, const size_t maxParticlesToPrint = 0) const;
+  void print(std::ostream& os, const size_t maxParticlesToPrint = 0) const;
 
-    /// dummy. For satisfying OhmmsElementBase.
-    bool
-    get(std::ostream& os) const override;
-    /// dummy. For satisfying OhmmsElementBase.
-    bool
-    put(std::istream&) override;
-    /// dummy. For satisfying OhmmsElementBase.
-    void
-    reset() override;
+  /// dummy. For satisfying OhmmsElementBase.
+  bool get(std::ostream& os) const override;
+  /// dummy. For satisfying OhmmsElementBase.
+  bool put(std::istream&) override;
+  /// dummy. For satisfying OhmmsElementBase.
+  void reset() override;
 
-    /// initialize ParticleSet from xmlNode
-    bool
-    put(xmlNodePtr cur) override;
+  /// initialize ParticleSet from xmlNode
+  bool put(xmlNodePtr cur) override;
 
-    /// specify quantum_domain of particles
-    void
-    setQuantumDomain(quantum_domains qdomain);
+  /// specify quantum_domain of particles
+  void setQuantumDomain(quantum_domains qdomain);
 
-    void
-    set_quantum()
-    {
-        quantum_domain = quantum;
-    }
+  void set_quantum() { quantum_domain = quantum; }
 
-    inline bool
-    is_classical() const
-    {
-        return quantum_domain == classical;
-    }
+  inline bool is_classical() const { return quantum_domain == classical; }
 
-    inline bool
-    is_quantum() const
-    {
-        return quantum_domain == quantum;
-    }
+  inline bool is_quantum() const { return quantum_domain == quantum; }
 
-    /// check whether quantum domain is valid for particles
-    inline bool
-    quantumDomainValid(quantum_domains qdomain) const
-    {
-        return qdomain != no_quantum_domain;
-    }
+  /// check whether quantum domain is valid for particles
+  inline bool quantumDomainValid(quantum_domains qdomain) const { return qdomain != no_quantum_domain; }
 
-    /// check whether quantum domain is valid for particles
-    inline bool
-    quantumDomainValid() const
-    {
-        return quantumDomainValid(quantum_domain);
-    }
+  /// check whether quantum domain is valid for particles
+  inline bool quantumDomainValid() const { return quantumDomainValid(quantum_domain); }
 
-    /** add a distance table
+  /** add a distance table
      * @param psrc source particle set
      * @param modes bitmask DistanceTable::DTModes
      *
      * if this->myName == psrc.getName(), AA type. Otherwise, AB type.
      */
-    int
-    addTable(const ParticleSetT& psrc, DTModes modes = DTModes::ALL_OFF);
+  int addTable(const ParticleSetT& psrc, DTModes modes = DTModes::ALL_OFF);
 
-    /// get a distance table by table_ID
-    inline auto&
-    getDistTable(int table_ID) const
-    {
-        return *DistTables[table_ID];
-    }
-    /// get a distance table by table_ID and dyanmic_cast to DistanceTableAA
-    const DistanceTableAAT<T>&
-    getDistTableAA(int table_ID) const;
-    /// get a distance table by table_ID and dyanmic_cast to DistanceTableAB
-    const DistanceTableABT<T>&
-    getDistTableAB(int table_ID) const;
+  /// get a distance table by table_ID
+  inline auto& getDistTable(int table_ID) const { return *DistTables[table_ID]; }
+  /// get a distance table by table_ID and dyanmic_cast to DistanceTableAA
+  const DistanceTableAAT<T>& getDistTableAA(int table_ID) const;
+  /// get a distance table by table_ID and dyanmic_cast to DistanceTableAB
+  const DistanceTableABT<T>& getDistTableAB(int table_ID) const;
 
-    /** reset all the collectable quantities during a MC iteration
+  /** reset all the collectable quantities during a MC iteration
      */
-    inline void
-    resetCollectables()
-    {
-        std::fill(Collectables.begin(), Collectables.end(), 0.0);
-    }
+  inline void resetCollectables() { std::fill(Collectables.begin(), Collectables.end(), 0.0); }
 
-    /** update the internal data
+  /** update the internal data
      *@param skip SK update if skipSK is true
      */
-    void
-    update(bool skipSK = false);
+  void update(bool skipSK = false);
 
-    /// batched version of update
-    static void
-    mw_update(
-        const RefVectorWithLeader<ParticleSetT>& p_list, bool skipSK = false);
+  /// batched version of update
+  static void mw_update(const RefVectorWithLeader<ParticleSetT>& p_list, bool skipSK = false);
 
-    /** create Structure Factor with PBCs
+  /** create Structure Factor with PBCs
      */
-    void
-    createSK();
+  void createSK();
 
-    bool
-    hasSK() const
-    {
-        return bool(structure_factor_);
-    }
+  bool hasSK() const { return bool(structure_factor_); }
 
-    /** return Structure Factor
+  /** return Structure Factor
      */
-    const StructFactT<T>&
-    getSK() const
-    {
-        assert(structure_factor_);
-        return *structure_factor_;
+  const StructFactT<T>& getSK() const
+  {
+    assert(structure_factor_);
+    return *structure_factor_;
     };
 
     /** Turn on per particle storage in Structure Factor

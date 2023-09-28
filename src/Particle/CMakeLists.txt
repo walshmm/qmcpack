@@ -23,7 +23,6 @@ set(PARTICLE
     DynamicCoordinatesBuilder.cpp
     DynamicCoordinatesT.cpp
     MCCoordsT.cpp
-    MCWalkerConfiguration.cpp
     MCWalkerConfigurationT.cpp
     WalkerConfigurations.cpp
     SpeciesSet.cpp

@@ -18,12 +18,12 @@
 #ifndef QMCPLUSPLUS_SPLINE_C2R_OMPTARGET_H
 #define QMCPLUSPLUS_SPLINE_C2R_OMPTARGET_H
 
-#include "QMCWaveFunctions/BsplineFactory/SplineC2RTOMPTarget.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineC2ROMPTargetT.h"
 
 namespace qmcplusplus
 {
-template<class T>
-using SplineC2ROMPTarget = SplineC2RTOMPTarget<T>;
+template<class ST>
+using SplineC2ROMPTarget = SplineC2ROMPTargetT<ST, QMCTraits::ValueType>;
 
 } // namespace qmcplusplus
 #endif
