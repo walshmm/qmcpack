@@ -120,10 +120,8 @@ if(OHMMS_DIM MATCHES 3)
     )
     if(QMC_COMPLEX)
       set(FERMION_SRCS ${FERMION_SRCS}
-        EinsplineSpinorSetBuilder.cpp 
-        BsplineFactory/SplineC2C.cpp)
-      set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS}
-        BsplineFactory/SplineC2COMPTarget.cpp)
+        EinsplineSpinorSetBuilder.cpp)
+      set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS})
     else(QMC_COMPLEX)
       set(FERMION_SRCS ${FERMION_SRCS}
         BsplineFactory/createRealSingle.cpp
