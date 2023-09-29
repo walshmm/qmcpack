@@ -29,11 +29,11 @@
 #include "QMCWaveFunctions/LCAO/LCAOSpinorBuilderT.h"
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilderT.h"
 #if defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include "QMCWaveFunctions/EinsplineSpinorSetBuilderT.h"
 #endif
 
 #if defined(HAVE_EINSPLINE)
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include "QMCWaveFunctions/EinsplineSetBuilderT.h"
 #endif
 #endif
 #include "Message/MPIObjectBase.h"
@@ -147,8 +147,8 @@ SPOSetBuilderFactoryT<T>::createSPOSetBuilder(xmlNodePtr rootNode)
 #ifdef QMC_COMPLEX
             app_log() << "Einspline Spinor Set\n";
             // FIXME
-            // bb = std::make_unique<EinsplineSpinorSetBuilder>(targetPtcl,
-            // ptclPool, myComm, rootNode);
+            bb = std::make_unique<EinsplineSpinorSetBuilderT<T>>(targetPtcl,
+            ptclPool, myComm, rootNode);
 #else
             PRE.error("Use of einspline spinors requires QMC_COMPLEX=1.  "
                       "Rebuild with this option");
@@ -159,8 +159,8 @@ SPOSetBuilderFactoryT<T>::createSPOSetBuilder(xmlNodePtr rootNode)
             PRE << "EinsplineSetBuilder:  using libeinspline for B-spline "
                    "orbitals.\n";
             // FIXME
-            // bb = std::make_unique<EinsplineSetBuilder>(targetPtcl, ptclPool,
-            // myComm, rootNode);
+            bb = std::make_unique<EinsplineSetBuilderT<T>>(targetPtcl, ptclPool,
+            myComm, rootNode);
 #else
             PRE.error("Einspline is missing for B-spline orbitals", true);
 #endif
