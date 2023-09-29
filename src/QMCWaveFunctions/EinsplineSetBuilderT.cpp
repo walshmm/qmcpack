@@ -1598,6 +1598,7 @@ EinsplineSetBuilderT<T>::createBsplineReader(
     }
 }
 
+#ifdef QMC_COMPLEX
 template <>
 void
 EinsplineSetBuilderT<std::complex<float>>::createBsplineReader(
@@ -1627,6 +1628,7 @@ EinsplineSetBuilderT<std::complex<double>>::createBsplineReader(
                 createBsplineComplexDoubleT(this, hybridRep, useGPU);
     }
 }
+#endif
 
 template <typename T>
 std::unique_ptr<SPOSetT<T>>
@@ -1809,9 +1811,12 @@ EinsplineSetBuilderT<T>::ReadGvectors_ESHDF()
     return hasPsig;
 }
 
+#ifndef QMC_COMPLEX
 template class EinsplineSetBuilderT<double>;
 template class EinsplineSetBuilderT<float>;
+#else
 template class EinsplineSetBuilderT<std::complex<double>>;
 template class EinsplineSetBuilderT<std::complex<float>>;
+#endif
 
 } // namespace qmcplusplus

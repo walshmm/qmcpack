@@ -33,7 +33,7 @@ class QMCHamiltonian;
 class MCPopulation
 {
 public:
-  using MCPWalker          = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using MCPWalker          = MCWalkerConfiguration::Walker_t;
   using WFBuffer           = MCPWalker::WFBuffer_t;
   using RealType           = QMCTraits::RealType;
   using Properties         = MCPWalker::PropertyContainer_t;

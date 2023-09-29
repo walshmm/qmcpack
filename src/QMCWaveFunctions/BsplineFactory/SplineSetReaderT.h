@@ -18,6 +18,7 @@
 
 #ifndef QMCPLUSPLUS_SPLINESET_READERT_H
 #define QMCPLUSPLUS_SPLINESET_READERT_H
+#include "EinsplineSetBuilderT.h"
 #include "BsplineFactory/BsplineReaderBaseT.h"
 #include "Utilities/FairDivide.h"
 #include "Utilities/ProgressReportEngine.h"

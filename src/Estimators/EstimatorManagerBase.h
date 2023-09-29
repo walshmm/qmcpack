@@ -52,7 +52,7 @@ public:
 
   using EstimatorType = ScalarEstimatorBase;
   using BufferType    = std::vector<RealType>;
-  using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using MCPWalker     = MCWalkerConfiguration::Walker_t;
 
   ///default constructor
   EstimatorManagerBase(Communicate* c = 0);

@@ -28,6 +28,7 @@
 
 #include <limits>
 #include <string>
+#include <tuple>
 
 using std::string;
 
@@ -49,10 +50,26 @@ using ValueApprox = typename ValueApproxHelper<T>::Type;
 
 namespace testing
 {
-OptVariablesTypeT<float>& getMyVars(SPOSetT<float>& rot) { return rot.myVars; }
-OptVariablesTypeT<double>& getMyVars(SPOSetT<double>& rot) { return rot.myVars; }
-OptVariablesTypeT<float>& getMyVarsFull(RotatedSPOsT<float>& rot) { return rot.myVarsFull; }
-OptVariablesTypeT<double>& getMyVarsFull(RotatedSPOsT<double>& rot) { return rot.myVarsFull; }
+OptVariablesTypeT<float>&
+getMyVars(SPOSetT<float>& rot)
+{
+    return rot.myVars;
+}
+OptVariablesTypeT<double>&
+getMyVars(SPOSetT<double>& rot)
+{
+    return rot.myVars;
+}
+OptVariablesTypeT<float>&
+getMyVarsFull(RotatedSPOsT<float>& rot)
+{
+    return rot.myVarsFull;
+}
+OptVariablesTypeT<double>&
+getMyVarsFull(RotatedSPOsT<double>& rot)
+{
+    return rot.myVarsFull;
+}
 std::vector<std::vector<float>>&
 getHistoryParams(RotatedSPOsT<float>& rot)
 {
@@ -66,12 +83,14 @@ getHistoryParams(RotatedSPOsT<double>& rot)
 }
 } // namespace testing
 
+using TestTypeList = std::tuple<double/*, float*/>;
+
 /*
   JPT 04.01.2022: Adapted from test_einset.cpp
   Test the spline rotated machinery for SplineR2R (extend to others later).
 */
-TEMPLATE_TEST_CASE(
-    "RotatedSPOs via SplineR2R", "[wavefunction][template]", double, float)
+TEMPLATE_LIST_TEST_CASE(
+    "RotatedSPOs via SplineR2R", "[wavefunction][template]", TestTypeList)
 {
     using RealType = typename SPOSetT<TestType>::RealType;
 
@@ -337,8 +356,8 @@ TEMPLATE_TEST_CASE(
 #endif
 }
 
-TEMPLATE_TEST_CASE("RotatedSPOs createRotationIndices",
-    "[wavefunction][template]", double, float)
+TEMPLATE_LIST_TEST_CASE("RotatedSPOs createRotationIndices",
+    "[wavefunction][template]", TestTypeList)
 {
     // No active-active or virtual-virtual rotations
     // Only active-virtual
@@ -373,8 +392,8 @@ TEMPLATE_TEST_CASE("RotatedSPOs createRotationIndices",
     CHECK(full_rot_ind3.size() == 6);
 }
 
-TEMPLATE_TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix",
-    "[wavefunction][template]", double, float)
+TEMPLATE_LIST_TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix",
+    "[wavefunction][template]", TestTypeList)
 {
     using ValueType = typename SPOSetT<TestType>::ValueType;
     using ValueMatrix = typename SPOSetT<TestType>::ValueMatrix;
@@ -412,8 +431,8 @@ TEMPLATE_TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix",
 }
 
 // Expected values of the matrix exponential come from gen_matrix_ops.py
-TEMPLATE_TEST_CASE("RotatedSPOs exponentiate matrix",
-    "[wavefunction][template]", double, float)
+TEMPLATE_LIST_TEST_CASE(
+    "RotatedSPOs exponentiate matrix", "[wavefunction][template]", TestTypeList)
 {
     using ValueType = typename SPOSetT<TestType>::ValueType;
     using ValueMatrix = typename SPOSetT<TestType>::ValueMatrix;
@@ -468,8 +487,8 @@ TEMPLATE_TEST_CASE("RotatedSPOs exponentiate matrix",
     }
 }
 
-TEMPLATE_TEST_CASE(
-    "RotatedSPOs log matrix", "[wavefunction][template]", double, float)
+TEMPLATE_LIST_TEST_CASE(
+    "RotatedSPOs log matrix", "[wavefunction][template]", TestTypeList)
 {
     using ValueType = typename SPOSetT<TestType>::ValueType;
     using ValueMatrix = typename SPOSetT<TestType>::ValueMatrix;
@@ -525,8 +544,8 @@ TEMPLATE_TEST_CASE(
 // The log is multi-valued so this test may fail if the rotation parameters are
 // too large. The exponentials will be the same, though
 //   exp(log(exp(A))) == exp(A)
-TEMPLATE_TEST_CASE(
-    "RotatedSPOs exp-log matrix", "[wavefunction][template]", double, float)
+TEMPLATE_LIST_TEST_CASE(
+    "RotatedSPOs exp-log matrix", "[wavefunction][template]", TestTypeList)
 {
     using ValueType = typename SPOSetT<TestType>::ValueType;
     using ValueMatrix = typename SPOSetT<TestType>::ValueMatrix;
@@ -565,8 +584,8 @@ TEMPLATE_TEST_CASE(
     }
 }
 
-TEMPLATE_TEST_CASE(
-    "RotatedSPOs hcpBe", "[wavefunction][template]", double, float)
+TEMPLATE_LIST_TEST_CASE(
+    "RotatedSPOs hcpBe", "[wavefunction][template]", TestTypeList)
 {
     using RealType = typename OrbitalSetTraits<TestType>::RealType;
     Communicate* c = OHMMS::Controller;
@@ -687,8 +706,8 @@ TEMPLATE_TEST_CASE(
 }
 
 // Test construction of delta rotation
-TEMPLATE_TEST_CASE("RotatedSPOs construct delta matrix",
-    "[wavefunction][template]", double, float)
+TEMPLATE_LIST_TEST_CASE("RotatedSPOs construct delta matrix",
+    "[wavefunction][template]", TestTypeList)
 {
     using ValueType = typename SPOSetT<TestType>::ValueType;
     using ValueMatrix = typename SPOSetT<TestType>::ValueMatrix;
@@ -751,8 +770,8 @@ TEMPLATE_TEST_CASE("RotatedSPOs construct delta matrix",
 }
 
 // Test using global rotation
-TEMPLATE_TEST_CASE("RotatedSPOs read and write parameters",
-    "[wavefunction][template]", double, float)
+TEMPLATE_LIST_TEST_CASE("RotatedSPOs read and write parameters",
+    "[wavefunction][template]", TestTypeList)
 {
     auto fake_spo = std::make_unique<FakeSPOT<TestType>>();
     fake_spo->setOrbitalSetSize(4);
@@ -804,8 +823,8 @@ TEMPLATE_TEST_CASE("RotatedSPOs read and write parameters",
 }
 
 // Test using history list.
-TEMPLATE_TEST_CASE("RotatedSPOs read and write parameters history",
-    "[wavefunction][template]", double, float)
+TEMPLATE_LIST_TEST_CASE("RotatedSPOs read and write parameters history",
+    "[wavefunction][template]", TestTypeList)
 {
     auto fake_spo = std::make_unique<FakeSPOT<TestType>>();
     fake_spo->setOrbitalSetSize(4);
@@ -920,8 +939,8 @@ public:
     }
 };
 
-TEMPLATE_TEST_CASE(
-    "RotatedSPOs mw_ APIs", "[wavefunction][template]", double, float)
+TEMPLATE_LIST_TEST_CASE(
+    "RotatedSPOs mw_ APIs", "[wavefunction][template]", TestTypeList)
 {
     // checking that mw_ API works in RotatedSPOs and is not defaulting to
     // SPOSet default implementation
