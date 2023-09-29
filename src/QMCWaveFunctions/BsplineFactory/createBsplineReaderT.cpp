@@ -216,6 +216,7 @@ createBsplineComplexDoubleT(
     return CreateComplexHelper<T>::createDouble(e, hybrid_rep, useGPU);
 }
 
+#ifdef QMC_COMPLEX
 template std::unique_ptr<BsplineReaderBaseT<std::complex<float>>>
 createBsplineComplexDoubleT<std::complex<float>>(
     EinsplineSetBuilderT<std::complex<float>>* e, bool hybrid_rep,
@@ -226,6 +227,7 @@ createBsplineComplexDoubleT<std::complex<double>>(
     EinsplineSetBuilderT<std::complex<double>>* e, bool hybrid_rep,
     const std::string& useGPU);
 
+#else
 template std::unique_ptr<BsplineReaderBaseT<float>>
 createBsplineComplexDoubleT<float>(
     EinsplineSetBuilderT<float>* e, bool hybrid_rep, const std::string& useGPU);
@@ -233,6 +235,7 @@ createBsplineComplexDoubleT<float>(
 template std::unique_ptr<BsplineReaderBaseT<double>>
 createBsplineComplexDoubleT<double>(EinsplineSetBuilderT<double>* e,
     bool hybrid_rep, const std::string& useGPU);
+#endif
 
 template <typename T>
 std::unique_ptr<BsplineReaderBaseT<T>>
@@ -242,6 +245,7 @@ createBsplineComplexSingleT(
     return CreateComplexHelper<T>::createSingle(e, hybrid_rep, useGPU);
 }
 
+#ifdef QMC_COMPLEX
 template std::unique_ptr<BsplineReaderBaseT<std::complex<float>>>
 createBsplineComplexSingleT<std::complex<float>>(
     EinsplineSetBuilderT<std::complex<float>>* e, bool hybrid_rep,
@@ -252,6 +256,7 @@ createBsplineComplexSingleT<std::complex<double>>(
     EinsplineSetBuilderT<std::complex<double>>* e, bool hybrid_rep,
     const std::string& useGPU);
 
+#else
 template std::unique_ptr<BsplineReaderBaseT<float>>
 createBsplineComplexSingleT<float>(
     EinsplineSetBuilderT<float>* e, bool hybrid_rep, const std::string& useGPU);
@@ -259,6 +264,7 @@ createBsplineComplexSingleT<float>(
 template std::unique_ptr<BsplineReaderBaseT<double>>
 createBsplineComplexSingleT<double>(EinsplineSetBuilderT<double>* e,
     bool hybrid_rep, const std::string& useGPU);
+#endif
 
 template <typename T>
 std::unique_ptr<BsplineReaderBaseT<T>>
@@ -286,6 +292,7 @@ createBsplineRealDoubleT(
     return aReader;
 }
 
+#ifndef QMC_COMPLEX
 template std::unique_ptr<BsplineReaderBaseT<float>>
 createBsplineRealDoubleT<float>(
     EinsplineSetBuilderT<float>* e, bool hybrid_rep, const std::string& useGPU);
@@ -293,6 +300,7 @@ createBsplineRealDoubleT<float>(
 template std::unique_ptr<BsplineReaderBaseT<double>>
 createBsplineRealDoubleT<double>(EinsplineSetBuilderT<double>* e,
     bool hybrid_rep, const std::string& useGPU);
+#endif
 
 template <typename T>
 std::unique_ptr<BsplineReaderBaseT<T>>
@@ -320,6 +328,7 @@ createBsplineRealSingleT(
     return aReader;
 }
 
+#ifndef QMC_COMPLEX
 template std::unique_ptr<BsplineReaderBaseT<float>>
 createBsplineRealSingleT<float>(
     EinsplineSetBuilderT<float>* e, bool hybrid_rep, const std::string& useGPU);
@@ -327,5 +336,6 @@ createBsplineRealSingleT<float>(
 template std::unique_ptr<BsplineReaderBaseT<double>>
 createBsplineRealSingleT<double>(EinsplineSetBuilderT<double>* e,
     bool hybrid_rep, const std::string& useGPU);
+#endif
 
 } // namespace qmcplusplus

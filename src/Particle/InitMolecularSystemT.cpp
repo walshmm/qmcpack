@@ -308,7 +308,7 @@ InitMolecularSystemT<T>::reset()
 
 #ifndef QMC_COMPLEX
 template class InitMolecularSystemT<double>;
-template class InitMolecularSystemT<float>;
+// template class InitMolecularSystemT<float>;
 #else
 template class InitMolecularSystemT<std::complex<double>>;
 template class InitMolecularSystemT<std::complex<float>>;

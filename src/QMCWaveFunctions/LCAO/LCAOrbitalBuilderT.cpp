@@ -1180,8 +1180,11 @@ LCAOrbitalBuilderT<T>::EvalPeriodicImagePhaseFactors(PosType SuperTwist,
     }
 }
 
+#ifndef QMC_COMPLEX
 template class LCAOrbitalBuilderT<double>;
 template class LCAOrbitalBuilderT<float>;
+#else
 template class LCAOrbitalBuilderT<std::complex<double>>;
 template class LCAOrbitalBuilderT<std::complex<float>>;
+#endif
 } // namespace qmcplusplus
