@@ -22,6 +22,7 @@
 namespace qmcplusplus
 {
 using DistanceTable = DistanceTableT<QMCTraits::ValueType>;
-
+using DistanceTableAA = DistanceTableAAT<QMCTraits::ValueType>;
+using DistanceTableAB = DistanceTableABT<QMCTraits::ValueType>;
 } // namespace qmcplusplus
 #endif

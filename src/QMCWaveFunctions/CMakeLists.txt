@@ -163,7 +163,6 @@ set(FERMION_SRCS
     Fermion/BackflowTransformation.cpp
     Fermion/DiracDeterminantWithBackflow.cpp
     Fermion/SlaterDetWithBackflow.cpp
-    SPOSetBuilderFactory.cpp
     SPOSetBuilderFactoryT.cpp
     TrialWaveFunction.cpp
     TWFdispatcher.cpp

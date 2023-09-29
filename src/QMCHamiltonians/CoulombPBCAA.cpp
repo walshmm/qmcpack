@@ -19,6 +19,7 @@
 #include <numeric>
 #include "EwaldRef.h"
 #include "Particle/DistanceTable.h"
+#include "Particle/SoaDistanceTableAA.h"
 #include "Utilities/ProgressReportEngine.h"
 #include <ResourceCollection.h>
 #include <Message/UniformCommunicateError.h>

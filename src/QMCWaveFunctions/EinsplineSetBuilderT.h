@@ -27,7 +27,6 @@
 #define QMCPLUSPLUS_EINSPLINE_SET_BUILDERT_H
 
 #include "QMCWaveFunctions/BandInfo.h"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBaseT.h"
 #include "QMCWaveFunctions/SPOSetBuilderT.h"
 

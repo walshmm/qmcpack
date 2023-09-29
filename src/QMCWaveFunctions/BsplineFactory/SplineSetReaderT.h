@@ -23,6 +23,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "mpi/collectives.h"
 #include "mpi/point2point.h"
+#include "QMCWaveFunctions/einspline_helper.hpp"
 #include "fftw3.h"
 
 namespace qmcplusplus
