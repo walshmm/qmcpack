@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "Message/Communicate.h"
 #include "Particle/ParticleSetPool.h"
+#include "Particle/SampleStack.h"
 
 namespace qmcplusplus
 {

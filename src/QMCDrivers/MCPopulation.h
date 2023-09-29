@@ -24,12 +24,7 @@
 #include "QMCDrivers/WalkerElementsRef.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Utilities/FairDivide.h"
-
-// forward declaration
-namespace optimize
-{
-struct VariableSet;
-}
+#include "QMCWaveFunctions/VariableSet.h"
 
 namespace qmcplusplus
 {

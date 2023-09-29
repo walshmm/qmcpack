@@ -26,7 +26,6 @@ set(PARTICLE
     MCWalkerConfigurationT.cpp
     WalkerConfigurations.cpp
     SpeciesSet.cpp
-    SampleStack.cpp
     SampleStackT.cpp
     createDistanceTableAA.cpp
     createDistanceTableAB.cpp
